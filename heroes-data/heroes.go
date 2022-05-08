@@ -29,22 +29,25 @@ type Class struct {
 	AvailableSkills []Skill       `json:"available_skills"`
 }
 
-// Skills are heroes abilities. They can be either race or class skills, might require a determined level or previous skill knowledge and be techniques or spells.
+// Skills are heroes abilities.
+// They can be either race or class skills, might be techniques or spells and require a minimum level or previous skill knowledge.
 type Skill struct {
-	ID               int       `json:"id"`
-	Name             string    `json:"name"`
-	Description      string    `json:"description"`
-	Bonus            string    `json:"bonus"`
-	Mana             string    `json:"mana"`
-	Difficulty       string    `json:"difficulty"`
-	Activation       string    `json:"activation"`
-	Source           Source    `json:"source"`
-	Type             SkillType `json:"type"`
-	LevelRequirement int       `json:"level_requirement"`
-	SkillRequirement []Skill   `json:"skill_requirement"`
+	ID               int              `json:"id"`
+	Name             string           `json:"name"`
+	Description      string           `json:"description"`
+	Bonus            string           `json:"bonus"`
+	Mana             string           `json:"mana"`
+	Difficulty       string           `json:"difficulty"`
+	Activation       Activation       `json:"activation"`
+	Source           Source           `json:"source"`
+	Type             SkillType        `json:"type"`
+	LevelRequirement LevelRequirement `json:"level_requirement"`
+	SkillRequirement []Skill          `json:"skill_requirement"`
+	Observations     []string         `json:"observations"`
 }
 
-// Proficiency represents natural abilities from classes, like being able to use complex weapons or cast magic. Classes come with two proficiencies, but might acquire more by multiclassing
+// Proficiency represents natural abilities from classes, like being able to use complex weapons or cast magic.
+// Classes come with two proficiencies, but might acquire more by multiclassing.
 type Proficiency string
 
 const (
@@ -64,7 +67,7 @@ const (
 	DEXTEROUS   Role = "dexterous"
 )
 
-// Skills can be learned as a racial feat, as a class ability, inherited from an acestor or be base (anyone can learn)
+// Skills can be learned as a racial feat, as a class ability, inherited from an acestor or be base (anyone can learn).
 type Source string
 
 const (
@@ -74,7 +77,7 @@ const (
 	ANCESTOR Source = "ancestor"
 )
 
-// Skills have activation timing, which are actions (you perform in your turn), reactions (you performe after some condition happens) and passive (always active)
+// Skills have activation timing, which are actions (you perform in your turn), reactions (you performe after some condition happens) and passive (always active).
 type Activation string
 
 const (
@@ -83,12 +86,23 @@ const (
 	PASSIVE  Activation = "passive"
 )
 
-// Skills can be simple abilities, characteristics (races usualy must be born with them), powerful tecniques (requires proficiency and/or some teaching) or spells (requires CAST_MAGIC proficiency, can be written in spellbooks)
+// Skills can be simple abilities, characteristics (races usualy must be born with them), powerful tecniques (requires proficiency and/or some teaching)
+// or spells (requires CAST_MAGIC proficiency, can be written in spellbooks).
 type SkillType string
 
 const (
-	Ability        SkillType = "ability"
-	Characteristic SkillType = "characteristic"
-	Technique      SkillType = "technique"
-	Spell          SkillType = "spell"
+	ABILITY        SkillType = "ability"
+	CHARACTERISTIC SkillType = "characteristic"
+	TECHNIQUE      SkillType = "technique"
+	SPELL          SkillType = "spell"
+)
+
+// Skills might have level requirements, which are advanced (5 or above), master (10 or above) or initial (must be level one to acquire)
+type LevelRequirement string
+
+const (
+	NONE     SkillType = "none"
+	ADVANCED SkillType = "advanced"
+	MASTER   SkillType = "master"
+	INITIAL  SkillType = "initial"
 )
