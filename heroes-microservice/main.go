@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	hero "tgl-dogg/heroes-data"
 
 	"net/http"
@@ -19,7 +20,7 @@ func main() {
 	//router.GET("/races-by-recommended-class", getRacesByRecommendedClass)
 
 	router.GET("/classes", getClasses)
-	//router.GET("/classes-by-role", getClassesByRole)
+	router.GET("/classes-by-role/:role", getClassesByRole)
 	//router.GET("/classes-by-proficiencies", getClassesByProficiencies)
 
 	router.GET("/skills", getSkills)
@@ -35,6 +36,19 @@ func getRaces(c *gin.Context) {
 
 func getClasses(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, classes)
+}
+
+func getClassesByRole(c *gin.Context) {
+	role := strings.ToLower(c.Param("role"))
+	classesByRole := make([]hero.Class, 0, len(classes))
+
+	for i := range classes {
+		if string(classes[i].Role) == role {
+			classesByRole = append(classesByRole, classes[i])
+		}
+	}
+
+	c.IndentedJSON(http.StatusOK, classesByRole)
 }
 
 func getSkills(c *gin.Context) {
