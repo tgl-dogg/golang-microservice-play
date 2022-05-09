@@ -21,7 +21,7 @@ func main() {
 
 	router.GET("/classes", getClasses)
 	router.GET("/classes-by-role/:role", getClassesByRole)
-	//router.GET("/classes-by-proficiencies", getClassesByProficiencies)
+	router.GET("/classes-by-proficiencies", getClassesByProficiencies)
 
 	router.GET("/skills", getSkills)
 	//router.GET("/skills-by-type", getSkillsByType)
@@ -39,16 +39,41 @@ func getClasses(c *gin.Context) {
 }
 
 func getClassesByRole(c *gin.Context) {
-	role := strings.ToLower(c.Param("role"))
+	role := hero.Role(strings.ToLower(c.Param("role")))
 	classesByRole := make([]hero.Class, 0, len(classes))
 
 	for i := range classes {
-		if string(classes[i].Role) == role {
+		if classes[i].Role == role {
 			classesByRole = append(classesByRole, classes[i])
 		}
 	}
 
 	c.IndentedJSON(http.StatusOK, classesByRole)
+}
+
+func getClassesByProficiencies(c *gin.Context) {
+	proficiencies, proficienciesNotEmpty := c.Request.URL.Query()["proficiencies"]
+	classesByProficiencies := make([]hero.Class, 0, len(classes))
+
+	if proficienciesNotEmpty {
+		// Map helps deduplication, allows us some casting and provides easier way to write a "contains" feature
+		proficiencyMap := make(map[hero.Proficiency]string)
+		for i := range proficiencies {
+			proficiencyMap[hero.Proficiency(proficiencies[i])] = proficiencies[i]
+		}
+
+		for i := range classes {
+			for j := range classes[i].Proficiencies {
+				// Checks for "contains" proficiency in the proficiency map
+				if _, ok := proficiencyMap[classes[i].Proficiencies[j]]; ok {
+					classesByProficiencies = append(classesByProficiencies, classes[i])
+					break // We only need to match a single proficiency to consider the class
+				}
+			}
+		}
+	}
+
+	c.IndentedJSON(http.StatusOK, classesByProficiencies)
 }
 
 func getSkills(c *gin.Context) {
