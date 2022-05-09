@@ -31,6 +31,7 @@ type Skill struct {
 	Description      string           `json:"description"`
 	Bonus            string           `json:"bonus"`
 	Mana             string           `json:"mana"`
+	DifficultyType   DifficultyType   `json:"difficulty_type"`
 	Difficulty       string           `json:"difficulty"`
 	Activation       Activation       `json:"activation"`
 	Source           Source           `json:"source"`
@@ -68,14 +69,15 @@ const (
 	DEXTEROUS   Role = "dexterous"
 )
 
-// Skills can be learned as a racial feat, as a class ability, inherited from an acestor or be base (anyone can learn).
-type Source string
+// Skills have different difficulties, being a fixed amount, auto (passive or no test required), variable (depends on player roleplaying choices)
+// and target + modifier (some target attribute - like dodge or defense - and a modifier, which can be zero or negative).
+type DifficultyType string
 
 const (
-	BASE     Source = "base"
-	RACE     Source = "race"
-	CLASS    Source = "class"
-	ANCESTOR Source = "ancestor"
+	AUTO        DifficultyType = "auto"
+	FIXED       DifficultyType = "fixed"
+	VARIABLE    DifficultyType = "variable"
+	TARGET_PLUS DifficultyType = "target_plus"
 )
 
 // Skills have activation timing, which are actions (you perform in your turn), reactions (you performe after some condition happens) and passive (always active).
@@ -85,6 +87,16 @@ const (
 	ACTION   Activation = "action"
 	REACTION Activation = "reaction"
 	PASSIVE  Activation = "passive"
+)
+
+// Skills can be learned as a racial feat, as a class ability, inherited from an acestor or be base (anyone can learn).
+type Source string
+
+const (
+	BASE     Source = "base"
+	RACE     Source = "race"
+	CLASS    Source = "class"
+	ANCESTOR Source = "ancestor"
 )
 
 // Skills can be simple abilities, characteristics (races usualy must be born with them), powerful tecniques (requires proficiency and/or some teaching)
