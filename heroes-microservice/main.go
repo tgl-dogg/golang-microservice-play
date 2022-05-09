@@ -17,15 +17,15 @@ func init() {
 func main() {
 	router := gin.Default()
 	router.GET("/races", getRaces)
-	//router.GET("/races-by-recommended-class", getRacesByRecommendedClass)
+	router.GET("/races-by-recommended-classes", getRacesByRecommendedClasses)
 
 	router.GET("/classes", getClasses)
 	router.GET("/classes-by-role/:role", getClassesByRole)
 	router.GET("/classes-by-proficiencies", getClassesByProficiencies)
 
 	router.GET("/skills", getSkills)
-	//router.GET("/skills-by-type", getSkillsByType)
-	//router.GET("/skills-by-source", getSkillsBySource)
+	router.GET("/skills-by-type/:type", getSkillsByType)
+	router.GET("/skills-by-source/:source", getSkillsBySource)
 
 	router.Run("localhost:8080")
 }
@@ -34,29 +34,54 @@ func getRaces(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, races)
 }
 
+func getRacesByRecommendedClasses(c *gin.Context) {
+	queryClasses, queryParamNotEmpty := c.Request.URL.Query()["classes"]
+	results := make([]hero.Race, 0, len(races))
+
+	if queryParamNotEmpty {
+		// Not the best approach since it's O(n³), but will suffice for now before we add some real database.
+		// Also, our RPG only has dozens of classes, no big deal.
+		for i := range races {
+		RECOMMENDED_CLASSES:
+			for j := range races[i].RecommendedClasses {
+				for k := range queryClasses {
+					className := strings.ToLower(races[i].RecommendedClasses[j].Name)
+
+					if strings.Contains(className, queryClasses[k]) {
+						results = append(results, races[i])
+						break RECOMMENDED_CLASSES // We only need to match a single class to consider the race.
+					}
+				}
+			}
+		}
+	}
+
+	c.IndentedJSON(http.StatusOK, results)
+}
+
 func getClasses(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, classes)
 }
 
 func getClassesByRole(c *gin.Context) {
 	role := hero.Role(strings.ToLower(c.Param("role")))
-	classesByRole := make([]hero.Class, 0, len(classes))
+	results := make([]hero.Class, 0, len(classes))
 
 	for i := range classes {
 		if classes[i].Role == role {
-			classesByRole = append(classesByRole, classes[i])
+			results = append(results, classes[i])
 		}
 	}
 
-	c.IndentedJSON(http.StatusOK, classesByRole)
+	c.IndentedJSON(http.StatusOK, results)
 }
 
 func getClassesByProficiencies(c *gin.Context) {
-	proficiencies, proficienciesNotEmpty := c.Request.URL.Query()["proficiencies"]
-	classesByProficiencies := make([]hero.Class, 0, len(classes))
+	proficiencies, queryParamNotEmpty := c.Request.URL.Query()["proficiencies"]
+	results := make([]hero.Class, 0, len(classes))
 
-	if proficienciesNotEmpty {
-		// Map helps deduplication, allows us some casting and provides easier way to write a "contains" feature
+	if queryParamNotEmpty {
+		// Map helps deduplication, allows us some casting and provides a better way to write a "contains" feature.
 		proficiencyMap := make(map[hero.Proficiency]string)
 		for i := range proficiencies {
 			proficiencyMap[hero.Proficiency(proficiencies[i])] = proficiencies[i]
@@ -66,18 +91,44 @@ func getClassesByProficiencies(c *gin.Context) {
 			for j := range classes[i].Proficiencies {
 				// Checks for "contains" proficiency in the proficiency map
 				if _, ok := proficiencyMap[classes[i].Proficiencies[j]]; ok {
-					classesByProficiencies = append(classesByProficiencies, classes[i])
-					break // We only need to match a single proficiency to consider the class
+					results = append(results, classes[i])
+					break // We only need to match a single proficiency to consider the class.
 				}
 			}
 		}
 	}
 
-	c.IndentedJSON(http.StatusOK, classesByProficiencies)
+	c.IndentedJSON(http.StatusOK, results)
 }
 
 func getSkills(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, skills)
+}
+
+func getSkillsByType(c *gin.Context) {
+	skillType := hero.SkillType(strings.ToLower(c.Param("type")))
+	results := make([]hero.Skill, 0, len(skills))
+
+	for i := range skills {
+		if skills[i].Type == skillType {
+			results = append(results, skills[i])
+		}
+	}
+
+	c.IndentedJSON(http.StatusOK, results)
+}
+
+func getSkillsBySource(c *gin.Context) {
+	source := hero.Source(strings.ToLower(c.Param("source")))
+	results := make([]hero.Skill, 0, len(skills))
+
+	for i := range skills {
+		if skills[i].Source == source {
+			results = append(results, skills[i])
+		}
+	}
+
+	c.IndentedJSON(http.StatusOK, results)
 }
 
 // Sample races for mocking. Will be useful for unit testing later.
@@ -183,6 +234,7 @@ var skills = []hero.Skill{
 		Description:      "You are immune to poisoning and can rol 3d6 when testing STR to resist fatigue.",
 		Bonus:            "",
 		Mana:             "",
+		DifficultyType:   hero.AUTO,
 		Difficulty:       "",
 		Activation:       hero.PASSIVE,
 		Source:           hero.RACE,
@@ -196,6 +248,7 @@ var skills = []hero.Skill{
 		Description:      "You unleashe a fervorous scream that motiates your allies. You and them receive +1 in every roll until the end of the turn.",
 		Bonus:            "This bonus is not cummulative.",
 		Mana:             "10",
+		DifficultyType:   hero.AUTO,
 		Difficulty:       "",
 		Activation:       hero.ACTION,
 		Source:           hero.CLASS,
@@ -209,6 +262,7 @@ var skills = []hero.Skill{
 		Description:      "You engulf a 4m ground area in flames. Everyone making contact will take 10 damage (fire) and another 10 damage (fire) per subsequent round they remain there. Lasts for 3 rounds.",
 		Bonus:            "Must be cast with a staff.",
 		Mana:             "30",
+		DifficultyType:   hero.FIXED,
 		Difficulty:       "12",
 		Activation:       hero.ACTION,
 		Source:           hero.CLASS,
@@ -220,9 +274,10 @@ var skills = []hero.Skill{
 	{
 		ID:               4,
 		Name:             "Hellfire II",
-		Description:      "You engulf a 4m diameter ground area in flames and create a rain of fire. Everyone inside will take 20 damage (fire) and another 20 damage (fire) per subsequent round they remain there. Lasts for 3 rounds.",
+		Description:      "You engulf a 4m diameter ground area in flames and it starts raining fire. Everyone inside will take 20 damage (fire) and another 20 damage (fire) per subsequent round they remain there. Lasts for 3 rounds.",
 		Bonus:            "Must be cast with a staff.",
 		Mana:             "40",
+		DifficultyType:   hero.FIXED,
 		Difficulty:       "12",
 		Activation:       hero.ACTION,
 		Source:           hero.CLASS,
@@ -237,12 +292,13 @@ var skills = []hero.Skill{
 		Description:      "Immediately choose a different class than yours when acquiring this skill. You gain all of its proficiencies and can acquire its skills as of your own.",
 		Bonus:            "",
 		Mana:             "",
+		DifficultyType:   hero.AUTO,
 		Difficulty:       "",
 		Activation:       hero.PASSIVE,
 		Source:           hero.BASE,
 		Type:             hero.TECHNIQUE,
 		LevelRequirement: hero.NONE,
 		SkillRequirement: []hero.Skill{},
-		Observations:     []string{"You are still considered your main class for any in-game purposes."},
+		Observations:     []string{"You class is still considered to be your main class for any in-game purposes."},
 	},
 }
