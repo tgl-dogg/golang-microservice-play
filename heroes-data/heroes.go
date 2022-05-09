@@ -1,28 +1,22 @@
 package heroes
 
-// Races represent the player's hero being, like Human or Elf.
+// Races represent the player's hero being, like Human or Elf. They have base attributes for the player.
 type Race struct {
-	ID                 int     `json:"id"`
-	Name               string  `json:"name"`
-	Description        string  `json:"description"`
-	Strength           int     `json:"strength"`
-	Agility            int     `json:"agility"`
-	Intelligence       int     `json:"intelligence"`
-	Willpower          int     `json:"willpower"`
-	StartingSkills     []Skill `json:"starting_skills"`
-	AvailableSkills    []Skill `json:"available_skills"`
-	RecommendedClasses []Class `json:"recommendedClasses"`
+	ID                 int       `json:"id"`
+	Name               string    `json:"name"`
+	Description        string    `json:"description"`
+	BaseAttributes     Attribute `json:"base_attributes"`
+	StartingSkills     []Skill   `json:"starting_skills"`
+	AvailableSkills    []Skill   `json:"available_skills"`
+	RecommendedClasses []Class   `json:"recommendedClasses"`
 }
 
-// Classes represent how a hero is specialized, like Warrior or Wizard.
+// Classes represent how a hero is specialized, like Warrior or Wizard. They give bonus attributes depending on their skillset.
 type Class struct {
 	ID              int           `json:"id"`
 	Name            string        `json:"name"`
 	Description     string        `json:"description"`
-	Strength        int           `json:"strength"`
-	Agility         int           `json:"agility"`
-	Intelligence    int           `json:"intelligence"`
-	Willpower       int           `json:"willpower"`
+	BonusAttributes Attribute     `json:"bonus_attributes"`
 	Role            Role          `json:"role"`
 	Proficiencies   []Proficiency `json:"proficiencies"`
 	StartingSkills  []Skill       `json:"starting_skills"`
@@ -44,6 +38,13 @@ type Skill struct {
 	LevelRequirement LevelRequirement `json:"level_requirement"`
 	SkillRequirement []Skill          `json:"skill_requirement"`
 	Observations     []string         `json:"observations"`
+}
+
+type Attribute struct {
+	Strength     int `json:"strength"`
+	Agility      int `json:"agility"`
+	Intelligence int `json:"intelligence"`
+	Willpower    int `json:"willpower"`
 }
 
 // Proficiency represents natural abilities from classes, like being able to use complex weapons or cast magic.
@@ -101,8 +102,8 @@ const (
 type LevelRequirement string
 
 const (
-	NONE     SkillType = "none"
-	ADVANCED SkillType = "advanced"
-	MASTER   SkillType = "master"
-	INITIAL  SkillType = "initial"
+	NONE     LevelRequirement = "none"
+	ADVANCED LevelRequirement = "advanced"
+	MASTER   LevelRequirement = "master"
+	INITIAL  LevelRequirement = "initial"
 )
