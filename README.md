@@ -1,6 +1,6 @@
 [![Coverage](https://codecov.io/gh/tgl-dogg/golang-microservice-play/branch/main/graph/badge.svg?token=17HRGMF4DF)](https://codecov.io/gh/tgl-dogg/golang-microservice-play)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
-[![CI](https://github.com/tgl-dogg/golang-microservice-play/actions/workflows/heroes-microservice.yaml/badge.svg)](https://github.com/tgl-dogg/golang-microservice-play/actions/workflows/heroes-microservice.yaml)
+[![CI](https://github.com/tgl-dogg/golang-microservice-play/actions/workflows/ci.yaml/badge.svg)](https://github.com/tgl-dogg/golang-microservice-play/actions/workflows/ci.yaml)
 
 ------
 # Golang Microservice Play
