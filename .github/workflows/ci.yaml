@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [ main, module-organization ]
+    #branches: [ main ]
+    branches: [ main, database-implementation ]
 
 jobs:
   build:
@@ -18,6 +19,7 @@ jobs:
       run: |
         go version
         go install golang.org/x/lint/golint@latest
+
     - name: Build
       run:
         go build ./...
