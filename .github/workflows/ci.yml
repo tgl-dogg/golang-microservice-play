@@ -19,7 +19,7 @@ jobs:
         go version
         go install golang.org/x/lint/golint@latest
     - name: Build
-      run: go build .
+      run: go build ./...
 
     - name: Test With Coverage
       run: go test -gcflags=-l -v  -coverprofile=coverage.txt -covermode=atomic ./...
