@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	// Avoiding initalization loops in mocking.
+	// Avoiding initialization loops in mocking.
 	skills[3].SkillRequirement = append(skills[3].SkillRequirement, skills[2])
 }
 
