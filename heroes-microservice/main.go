@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 	hero "tgl-dogg/heroes-data"
 
@@ -17,13 +19,16 @@ func init() {
 func main() {
 	router := gin.Default()
 	router.GET("/races", getRaces)
+	router.GET("/races/:id", getRaceById)
 	router.GET("/races-by-recommended-classes", getRacesByRecommendedClasses)
 
 	router.GET("/classes", getClasses)
+	router.GET("/classes/:id", getClassById)
 	router.GET("/classes-by-role/:role", getClassesByRole)
 	router.GET("/classes-by-proficiencies", getClassesByProficiencies)
 
 	router.GET("/skills", getSkills)
+	router.GET("/skills/:id", getSkillById)
 	router.GET("/skills-by-type/:type", getSkillsByType)
 	router.GET("/skills-by-source/:source", getSkillsBySource)
 
@@ -32,6 +37,23 @@ func main() {
 
 func getRaces(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, races)
+}
+
+func getRaceById(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
+		return
+	}
+
+	for i := range races {
+		if races[i].ID == id {
+			c.IndentedJSON(http.StatusOK, races[i])
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, fmt.Sprintf("{id: %d, message: \"Resource not found.\"}", id))
 }
 
 func getRacesByRecommendedClasses(c *gin.Context) {
@@ -61,6 +83,23 @@ func getRacesByRecommendedClasses(c *gin.Context) {
 
 func getClasses(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, classes)
+}
+
+func getClassById(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
+		return
+	}
+
+	for i := range classes {
+		if classes[i].ID == id {
+			c.IndentedJSON(http.StatusOK, classes[i])
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, fmt.Sprintf("{id: %d, message: \"Resource not found.\"}", id))
 }
 
 func getClassesByRole(c *gin.Context) {
@@ -103,6 +142,23 @@ func getClassesByProficiencies(c *gin.Context) {
 
 func getSkills(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, skills)
+}
+
+func getSkillById(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
+		return
+	}
+
+	for i := range skills {
+		if skills[i].ID == id {
+			c.IndentedJSON(http.StatusOK, skills[i])
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, fmt.Sprintf("{id: %d, message: \"Resource not found.\"}", id))
 }
 
 func getSkillsByType(c *gin.Context) {
