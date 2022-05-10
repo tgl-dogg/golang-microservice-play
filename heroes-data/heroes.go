@@ -1,6 +1,6 @@
 package heroes
 
-// Races represent the player's hero being, like Human or Elf. They have base attributes for the player.
+// Race represents the player's hero being, like Human or Elf. They have base attributes for the character and learn racial skills.
 type Race struct {
 	ID                 int       `json:"id"`
 	Name               string    `json:"name"`
@@ -11,7 +11,7 @@ type Race struct {
 	RecommendedClasses []Class   `json:"recommendedClasses"`
 }
 
-// Classes represent how a hero is specialized, like Warrior or Wizard. They give bonus attributes depending on their skillset.
+// Class represents how a hero is specialized, like Warrior or Wizard. They give bonus attributes depending on their skillset.
 type Class struct {
 	ID              int           `json:"id"`
 	Name            string        `json:"name"`
@@ -23,7 +23,7 @@ type Class struct {
 	AvailableSkills []Skill       `json:"available_skills"`
 }
 
-// Skills are heroes abilities.
+// Skill is a hero ability.
 // They can be either race or class skills, might be techniques or spells and require a minimum level or previous skill knowledge.
 type Skill struct {
 	ID               int              `json:"id"`
@@ -41,6 +41,8 @@ type Skill struct {
 	Observations     []string         `json:"observations"`
 }
 
+// Attribute is a hero measurement of power. Heroes have strength (physical power), agility (velocity and dexterity),
+// intelligence (smartness and cast magic) and overall willpower.
 type Attribute struct {
 	Strength     int `json:"strength"`
 	Agility      int `json:"agility"`
@@ -53,69 +55,95 @@ type Attribute struct {
 type Proficiency string
 
 const (
-	SIMPLE_WEAPONS  Proficiency = "simple_weapons"
-	COMPLEX_WEAPONS Proficiency = "complex_weapons"
-	CAST_MAGIC      Proficiency = "cast_magic"
-	READ_MAGIC      Proficiency = "read_magic"
-	PICKPOKET       Proficiency = "pickpocket"
+	// Case use small cold weapons, such as daggers, shortswords, handaxes, bows and crossbows.
+	SimpleWeapons Proficiency = "simple_weapons"
+	// Can use bigger cold weapons, such as longswords, greataxes, lances, warbows and heavy crossbows.
+	ComplexWeapons Proficiency = "complex_weapons"
+	// Can cast spells, such as Fireball or Hellfire.
+	CastMagic Proficiency = "cast_magic"
+	// Can read magically engraved itens, such as spellbooks, runes or enchanted weapons.
+	ReadMagic Proficiency = "read_magic"
+	// Can pick locks, disarm traps and steal from unsuspecting pockets.
+	Pickpocket Proficiency = "pickpocket"
 )
 
 // Role represents overall class strategies: physical fighting, magical casting or dexterity usage. Classes usualy have only one role.
 type Role string
 
 const (
-	FIGHTER     Role = "fighter"
-	SPELLCASTER Role = "spellcaster"
-	DEXTEROUS   Role = "dexterous"
+	// Fights with melee weapons and has greater overall endurance with high damage output. Excels at strength and defense, has high agility and hit points.
+	Fighter Role = "fighter"
+	// Versatile due its access to spells, can sustain damage, provide support or be a jack-of-all-trades. Excels at intelligence and has high willpower and mana.
+	Spellcaster Role = "spellcaster"
+	// Cunning and deceiving, may fight at distance, work treacherously or avoid being noticed at all. Excels at agility and dodge, has high intelligence and balanced attributes.
+	Dexterous Role = "dexterous"
 )
 
-// Skills have different difficulties, being a fixed amount, auto (passive or no test required), variable (depends on player roleplaying choices)
-// and target + modifier (some target attribute - like dodge or defense - and a modifier, which can be zero or negative).
+// DifficultyType represents skills different difficulties, which are a target number that must be achieved with hero attribute + dice rolling to be performed.
 type DifficultyType string
 
 const (
-	AUTO        DifficultyType = "auto"
-	FIXED       DifficultyType = "fixed"
-	VARIABLE    DifficultyType = "variable"
-	TARGET_PLUS DifficultyType = "target_plus"
+	// Skill is always active (if passive) or automatically used upon activation timing without requirent a test, like Warrior's War Cry.
+	Auto DifficultyType = "auto"
+	// Skill have a fixed target number to be performed, like 12 for Wizard's Fireball or Hellfire.
+	Fixed DifficultyType = "fixed"
+	// Difficulty depends on player roleplaying choice, like trying to levitate a small rock or a cow.
+	Variable DifficultyType = "variable"
+	// Difficult is set upon a target value (like opponent's defense or dodge) with a modifier (can be positive, negative or zero).
+	TargetPlus DifficultyType = "target_plus"
 )
 
-// Skills have activation timing, which are actions (you perform in your turn), reactions (you performe after some condition happens) and passive (always active).
+// Activation represents skills timing, like activating in your turn, in response to something or being always active.
 type Activation string
 
 const (
-	ACTION   Activation = "action"
-	REACTION Activation = "reaction"
-	PASSIVE  Activation = "passive"
+	// You perform during your turn, such as Warrior's War Cry.
+	Action Activation = "action"
+	// Skill activate after some precondition happens, like response to taking damage.
+	Reaction Activation = "reaction"
+	// Always active, like Dwarf's Mountain Vigor.
+	Passive Activation = "passive"
 )
 
-// Skills can be learned as a racial feat, as a class ability, inherited from an acestor or be base (anyone can learn).
+// Source is where a skills can be learned from.
 type Source string
 
 const (
-	BASE     Source = "base"
-	RACE     Source = "race"
-	CLASS    Source = "class"
-	ANCESTOR Source = "ancestor"
+	// Anyone can learn. Skill requirements must still be met.
+	Base Source = "base"
+	// Can only be accessed by members of a determined race.
+	FromRace Source = "race"
+	// Can only be accessed by members of a determined class.
+	FromClass Source = "class"
+	// Must be learnt from your ancestral inheritance.
+	FromAncestor Source = "ancestor"
 )
 
-// Skills can be simple abilities, characteristics (races usualy must be born with them), powerful tecniques (requires proficiency and/or some teaching)
+// SkillType represents skills categories, like abilities, characteristics (races are usualy born with them), powerful tecniques (requires proficiency and/or some teaching)
 // or spells (requires CAST_MAGIC proficiency, can be written in spellbooks).
 type SkillType string
 
 const (
-	ABILITY        SkillType = "ability"
-	CHARACTERISTIC SkillType = "characteristic"
-	TECHNIQUE      SkillType = "technique"
-	SPELL          SkillType = "spell"
+	// Simple skill type, has nothing special.
+	Ability SkillType = "ability"
+	// Usualy passives or racial feats. Characteristics become your hero's way of being and might change attributes or physical appearance (like having four arms).
+	Characteristic SkillType = "characteristic"
+	// Techniques usually require proficiency and can be learnt by spending skill points or training with a mentor in-game.
+	Technique SkillType = "technique"
+	// Spells require cast_spell proficiency and can be executed by memory (when you acquire the skill) or from a spellbook (if you have studied it beforehand).
+	Spell SkillType = "spell"
 )
 
-// Skills might have level requirements, which are advanced (5 or above), master (10 or above) or initial (must be level one to acquire)
+// LevelRequirement is a skills dependency model, which can be advanced (level 5 or above), master (level 10 or above) or initial (must be level one to acquire).
 type LevelRequirement string
 
 const (
-	NONE     LevelRequirement = "none"
-	ADVANCED LevelRequirement = "advanced"
-	MASTER   LevelRequirement = "master"
-	INITIAL  LevelRequirement = "initial"
+	// No level requirement. Can be learnt at any time, provided your have spare skill points and access to it.
+	None LevelRequirement = "none"
+	// Must be level 5 or above to learn. These skills are powerful game changers.
+	Advanced LevelRequirement = "advanced"
+	// Must be level 10 or above to learn. Classes usualy have one or two master skills at most, as they are ultimate skills.
+	Master LevelRequirement = "master"
+	// Must be learnt at level 1, i.e. when you first create your hero sheet.
+	Initial LevelRequirement = "initial"
 )
