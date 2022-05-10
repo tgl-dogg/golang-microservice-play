@@ -1,3 +1,3 @@
-module github.com/tgl-dogg/golang-microservices-play
+module github.com/tgl-dogg/golang-microservice-play
 
 go 1.18
