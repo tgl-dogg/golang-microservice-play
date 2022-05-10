@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
-	hero "tgl-dogg/heroes-data"
-
-	"net/http"
 
 	"github.com/gin-gonic/gin"
+	hero "github.com/tgl-dogg/golang-microservice-play/heroes-data"
 )
 
 func init() {
