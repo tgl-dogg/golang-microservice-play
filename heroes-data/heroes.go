@@ -55,15 +55,15 @@ type Attribute struct {
 type Proficiency string
 
 const (
-	// Case use small cold weapons, such as daggers, shortswords, handaxes, bows and crossbows.
+	// SimpleWeapons allows usage of small cold weapons, such as daggers, shortswords, handaxes, bows and crossbows.
 	SimpleWeapons Proficiency = "simple_weapons"
-	// Can use bigger cold weapons, such as longswords, greataxes, lances, warbows and heavy crossbows.
+	// ComplexWeapons allows usage of bigger cold weapons, such as longswords, greataxes, lances, warbows and heavy crossbows.
 	ComplexWeapons Proficiency = "complex_weapons"
-	// Can cast spells, such as Fireball or Hellfire.
+	// CastMagic allows spellcasting, such as Wizard's Fireball or Hellfire.
 	CastMagic Proficiency = "cast_magic"
-	// Can read magically engraved itens, such as spellbooks, runes or enchanted weapons.
+	// ReadMagic allows reading magically engraved itens, such as spellbooks, runes or enchanted weapons.
 	ReadMagic Proficiency = "read_magic"
-	// Can pick locks, disarm traps and steal from unsuspecting pockets.
+	// Pickpocket allows picking locks, disarming traps and stealing from unsuspecting pockets.
 	Pickpocket Proficiency = "pickpocket"
 )
 
@@ -71,11 +71,11 @@ const (
 type Role string
 
 const (
-	// Fights with melee weapons and has greater overall endurance with high damage output. Excels at strength and defense, has high agility and hit points.
+	// Fighter uses melee weapons and has greater overall endurance with high damage output. Excels at strength and defense, has high agility and hit points.
 	Fighter Role = "fighter"
-	// Versatile due its access to spells, can sustain damage, provide support or be a jack-of-all-trades. Excels at intelligence and has high willpower and mana.
+	// Spellcaster can be versatile due its access to spells. Can sustain damage, provide support or be a jack-of-all-trades. Excels at intelligence and has high willpower and mana.
 	Spellcaster Role = "spellcaster"
-	// Cunning and deceiving, may fight at distance, work treacherously or avoid being noticed at all. Excels at agility and dodge, has high intelligence and balanced attributes.
+	// Dexterous are cunning and deceiving, may fight at distance, work treacherously or avoid being noticed at all. Excels at agility and dodge, has high intelligence and balanced attributes.
 	Dexterous Role = "dexterous"
 )
 
@@ -83,13 +83,13 @@ const (
 type DifficultyType string
 
 const (
-	// Skill is always active (if passive) or automatically used upon activation timing without requirent a test, like Warrior's War Cry.
+	// Auto skills are always active (if passive) or automatically used upon activation, having no difficult target like Warrior's War Cry.
 	Auto DifficultyType = "auto"
-	// Skill have a fixed target number to be performed, like 12 for Wizard's Fireball or Hellfire.
+	// Fixed skills have a fixed target number as difficulty, like 12 for Wizard's Fireball or Hellfire.
 	Fixed DifficultyType = "fixed"
-	// Difficulty depends on player roleplaying choice, like trying to levitate a small rock or a cow.
+	// Variable difficulty depends on player roleplaying choices, like trying to levitate a small rock or a cow.
 	Variable DifficultyType = "variable"
-	// Difficult is set upon a target value (like opponent's defense or dodge) with a modifier (can be positive, negative or zero).
+	// TargetPlus difficulty is set upon a target value (like opponent's defense or dodge) with a modifier (can be positive, negative or zero).
 	TargetPlus DifficultyType = "target_plus"
 )
 
@@ -97,11 +97,11 @@ const (
 type Activation string
 
 const (
-	// You perform during your turn, such as Warrior's War Cry.
+	// Action is performed during your turn, such as Warrior's War Cry or Wizard's Hellfire.
 	Action Activation = "action"
-	// Skill activate after some precondition happens, like response to taking damage.
+	// Reaction skills activate after some precondition happens, like response to taking damage.
 	Reaction Activation = "reaction"
-	// Always active, like Dwarf's Mountain Vigor.
+	// Passive skills are always active, like Dwarf's Mountain Vigor.
 	Passive Activation = "passive"
 )
 
@@ -109,13 +109,13 @@ const (
 type Source string
 
 const (
-	// Anyone can learn. Skill requirements must still be met.
+	// Base skills can be leartn by anyone. Skill requirements must still be met.
 	Base Source = "base"
-	// Can only be accessed by members of a determined race.
+	// FromRace can only be accessed by members of a determined race.
 	FromRace Source = "race"
-	// Can only be accessed by members of a determined class.
+	// FromClass can only be accessed by members of a determined class.
 	FromClass Source = "class"
-	// Must be learnt from your ancestral inheritance.
+	// FromAncestor must be learnt from your ancestral inheritance.
 	FromAncestor Source = "ancestor"
 )
 
@@ -124,13 +124,13 @@ const (
 type SkillType string
 
 const (
-	// Simple skill type, has nothing special.
+	// Ability is a simple skill type, with nothing special about it.
 	Ability SkillType = "ability"
-	// Usualy passives or racial feats. Characteristics become your hero's way of being and might change attributes or physical appearance (like having four arms).
+	// Characteristic is usualy a passive or racial feat. Characteristics become your hero's way of being and might change attributes or physical appearance (like having four arms).
 	Characteristic SkillType = "characteristic"
-	// Techniques usually require proficiency and can be learnt by spending skill points or training with a mentor in-game.
+	// Technique usually requires proficiency and can be learnt by spending skill points or training with a mentor in-game.
 	Technique SkillType = "technique"
-	// Spells require cast_spell proficiency and can be executed by memory (when you acquire the skill) or from a spellbook (if you have studied it beforehand).
+	// Spell requires cast_spell proficiency and can be executed by memory (when you acquire the skill) or from a spellbook (if you have studied it beforehand).
 	Spell SkillType = "spell"
 )
 
@@ -138,12 +138,12 @@ const (
 type LevelRequirement string
 
 const (
-	// No level requirement. Can be learnt at any time, provided your have spare skill points and access to it.
+	// None means you can learn the skill at any level.
 	None LevelRequirement = "none"
-	// Must be level 5 or above to learn. These skills are powerful game changers.
+	// Advanced skills must be learnt at level 5 or above. These skills are powerful game changers.
 	Advanced LevelRequirement = "advanced"
-	// Must be level 10 or above to learn. Classes usualy have one or two master skills at most, as they are ultimate skills.
+	// Master skills must be learnt at level 10 or above. Classes usualy have one or two master skills at most, as they are ultimate skills.
 	Master LevelRequirement = "master"
-	// Must be learnt at level 1, i.e. when you first create your hero sheet.
+	// Initial skills must be learnt at level 1, i.e. when you first create your hero sheet. This usualy includes ancestor skills and racial feats (like having four arms).
 	Initial LevelRequirement = "initial"
 )
