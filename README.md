@@ -1,3 +1,8 @@
+[![Coverage](https://codecov.io/gh/tgl-dogg/golang-microservice-play/branch/main/graph/badge.svg?token=17HRGMF4DF)](https://codecov.io/gh/tgl-dogg/golang-microservice-play)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI](https://github.com/tgl-dogg/golang-microservice-play/actions/workflows/heroes-microservice.yaml/badge.svg)](https://github.com/tgl-dogg/golang-microservice-play/actions/workflows/heroes-microservice.yaml)
+
+------
 # golang-microservice-play
 Some repository for toying around with Golang microservices.
 
