@@ -34,7 +34,7 @@ func Test_GetRaces_OK(t *testing.T) {
 
 func Test_GetRaceByID_OK(t *testing.T) {
 	r := gin.New()
-	r.GET("/:id", getRaceById)
+	r.GET("/:id", getRaceByID)
 	resp := emulateRequest(r, "/1")
 
 	if resp.Code != http.StatusOK {
@@ -54,7 +54,7 @@ func Test_GetRaceByID_OK(t *testing.T) {
 
 func Test_GetRaceByID_NOTFOUND(t *testing.T) {
 	r := gin.New()
-	r.GET("/:id", getRaceById)
+	r.GET("/:id", getRaceByID)
 	resp := emulateRequest(r, "/-1")
 
 	if resp.Code != http.StatusNotFound {
@@ -66,7 +66,7 @@ func Test_GetRaceByID_IDINVALID(t *testing.T) {
 	invalidID := "98a11010-d019-11ec-9d64-0242ac120002"
 
 	r := gin.New()
-	r.GET("/:id", getRaceById)
+	r.GET("/:id", getRaceByID)
 	resp := emulateRequest(r, "/"+invalidID)
 
 	if resp.Code != http.StatusBadRequest {

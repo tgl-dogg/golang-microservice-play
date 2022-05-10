@@ -19,16 +19,16 @@ func init() {
 func main() {
 	router := gin.Default()
 	router.GET("/races", getRaces)
-	router.GET("/races/:id", getRaceById)
+	router.GET("/races/:id", getRaceByID)
 	router.GET("/races-by-recommended-classes", getRacesByRecommendedClasses)
 
 	router.GET("/classes", getClasses)
-	router.GET("/classes/:id", getClassById)
+	router.GET("/classes/:id", getClassByID)
 	router.GET("/classes-by-role/:role", getClassesByRole)
 	router.GET("/classes-by-proficiencies", getClassesByProficiencies)
 
 	router.GET("/skills", getSkills)
-	router.GET("/skills/:id", getSkillById)
+	router.GET("/skills/:id", getSkillByID)
 	router.GET("/skills-by-type/:type", getSkillsByType)
 	router.GET("/skills-by-source/:source", getSkillsBySource)
 
@@ -39,7 +39,7 @@ func getRaces(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, races)
 }
 
-func getRaceById(c *gin.Context) {
+func getRaceByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
@@ -85,7 +85,7 @@ func getClasses(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, classes)
 }
 
-func getClassById(c *gin.Context) {
+func getClassByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
@@ -144,7 +144,7 @@ func getSkills(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, skills)
 }
 
-func getSkillById(c *gin.Context) {
+func getSkillByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
