@@ -1,9 +1,9 @@
 [![Coverage](https://codecov.io/gh/tgl-dogg/golang-microservice-play/branch/main/graph/badge.svg?token=17HRGMF4DF)](https://codecov.io/gh/tgl-dogg/golang-microservice-play)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![CI](https://github.com/tgl-dogg/golang-microservice-play/actions/workflows/heroes-microservice.yaml/badge.svg)](https://github.com/tgl-dogg/golang-microservice-play/actions/workflows/heroes-microservice.yaml)
 
 ------
-# golang-microservice-play
+# Golang Microservice Play
 Some repository for toying around with Golang microservices.
 
 I might add some microservice(s) to process simple CRUD operations using PostgreSQL hosted in AWS (free tier, of course!). I'm thinking about mapping some simple entities that belong to a tabletop RPG system I play with my friends called Mighty Blade, which includes: races, classes and skills (for now). Races have skills and classes also have skills. Skills have all sort of characteristics and that's where the things start to get interesting. 
