@@ -67,7 +67,7 @@ const (
 	Pickpocket Proficiency = "pickpocket"
 )
 
-// Role represents overall class strategies: physical fighting, magical casting or dexterity usage. Classes usualy have only one role.
+// Role represents overall class strategies: physical fighting, magical casting or dexterity usage. Classes usually have only one role.
 type Role string
 
 const (
@@ -119,14 +119,14 @@ const (
 	FromAncestor Source = "ancestor"
 )
 
-// SkillType represents skills categories, like abilities, characteristics (races are usualy born with them), powerful tecniques (requires proficiency and/or some teaching)
+// SkillType represents skills categories, like abilities, characteristics (races are usually born with them), powerful tecniques (requires proficiency and/or some teaching)
 // or spells (requires CAST_MAGIC proficiency, can be written in spellbooks).
 type SkillType string
 
 const (
 	// Ability is a simple skill type, with nothing special about it.
 	Ability SkillType = "ability"
-	// Characteristic is usualy a passive or racial feat. Characteristics become your hero's way of being and might change attributes or physical appearance (like having four arms).
+	// Characteristic is usually a passive or racial feat. Characteristics become your hero's way of being and might change attributes or physical appearance (like having four arms).
 	Characteristic SkillType = "characteristic"
 	// Technique usually requires proficiency and can be learnt by spending skill points or training with a mentor in-game.
 	Technique SkillType = "technique"
@@ -142,8 +142,8 @@ const (
 	None LevelRequirement = "none"
 	// Advanced skills must be learnt at level 5 or above. These skills are powerful game changers.
 	Advanced LevelRequirement = "advanced"
-	// Master skills must be learnt at level 10 or above. Classes usualy have one or two master skills at most, as they are ultimate skills.
+	// Master skills must be learnt at level 10 or above. Classes usually have one or two master skills at most, as they are ultimate skills.
 	Master LevelRequirement = "master"
-	// Initial skills must be learnt at level 1, i.e. when you first create your hero sheet. This usualy includes ancestor skills and racial feats (like having four arms).
+	// Initial skills must be learnt at level 1, i.e. when you first create your hero sheet. This usually includes ancestor skills and racial feats (like having four arms).
 	Initial LevelRequirement = "initial"
 )
