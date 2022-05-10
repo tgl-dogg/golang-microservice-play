@@ -7,9 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	hero "tgl-dogg/heroes-data"
-
 	"github.com/gin-gonic/gin"
+	hero "github.com/tgl-dogg/golang-microservice-play/heroes-data"
 )
 
 func Test_GetRaces_OK(t *testing.T) {

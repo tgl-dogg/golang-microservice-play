@@ -1,11 +1,8 @@
-name: heroes-microservice
+name: CI
 
 on:
   push:
-    branches: [ main, project-preparation ]
-    paths:
-      - "heroes-microservice/**"
-      - ".github/workflows/heroes-microservice.yaml"
+    branches: [ main, module-organization ]
 
 jobs:
   build:
@@ -22,13 +19,11 @@ jobs:
         go version
         go install golang.org/x/lint/golint@latest
     - name: Build
-      run: |-
-        cd heroes-microservice/
-        go build .
+      run:
+        go build ./...
 
     - name: Test With Coverage
-      run: |-
-        cd heroes-microservice/ 
+      run:
         go test -gcflags=-l -v -coverprofile=coverage.txt -covermode=atomic ./...
 
     - name: Upload coverage to Codecov
@@ -36,6 +31,5 @@ jobs:
 
     - name: Run Vet & Lint
       run: |-
-        cd heroes-microservice/
         go vet ./...
         golint -set_exit_status=1 ./...
