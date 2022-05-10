@@ -1,8 +1,11 @@
-name: CI
+name: "{{MICROSERVICE}}"
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - "{{MICROSERVICE}}/**"
+      - ".github/workflows/{{MICROSERVICE}}.yaml"
 
 jobs:
   build:
@@ -17,17 +20,22 @@ jobs:
     - name: Install dependencies
       run: |
         go version
-        go install golang.org/x/lint/golint
+        go install golang.org/x/lint/golint@latest
     - name: Build
-      run: go build .
+      run: |-
+        cd {{MICROSERVICE}}/
+        go build .
 
-    - name: Test With Coverage
-      run: go test -gcflags=-l -v  -coverprofile=coverage.txt -covermode=atomic ./...
+    - name: Test With Coverage      
+      run: |-
+        cd {{MICROSERVICE}}/
+        go test -gcflags=-l -v  -coverprofile=coverage.txt -covermode=atomic ./...
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
 
     - name: Run Vet & Lint
       run: |
+        cd {{MICROSERVICE}}/
         go vet ./...
         golint -set_exit_status=1 ./...
