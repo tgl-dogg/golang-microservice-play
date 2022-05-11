@@ -11,6 +11,7 @@ import (
 // DB is a connected database object
 var DB *gorm.DB
 
+// Setup database connection based on parameters provided in the receiver.
 func (dbConnection DBConnection) Setup() {
 	dbInfo := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", dbConnection.Host, dbConnection.Port, dbConnection.User, dbConnection.DBName, dbConnection.Password)
 	db, err := gorm.Open(postgres.Open(dbInfo), &gorm.Config{})
@@ -28,6 +29,7 @@ func GetDB() *gorm.DB {
 	return DB
 }
 
+// DBConnection wraps information necessary to connect to a database.
 type DBConnection struct {
 	Host, Port, User, Password, DBName string
 }
