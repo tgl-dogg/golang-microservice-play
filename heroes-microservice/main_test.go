@@ -54,7 +54,7 @@ func Test_GetRaceByID_OK(t *testing.T) {
 func Test_GetRaceByID_NOTFOUND(t *testing.T) {
 	r := gin.New()
 	r.GET("/:id", getRaceByID)
-	resp := emulateRequest(r, "/-1")
+	resp := emulateRequest(r, "/1000")
 
 	if resp.Code != http.StatusNotFound {
 		t.Error("HTTP request status code error.")

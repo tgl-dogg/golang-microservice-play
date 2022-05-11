@@ -16,7 +16,7 @@ import (
 
 func init() {
 	// Avoiding initialization loops in mocking.
-	skills[3].SkillRequirement = append(skills[3].SkillRequirement, skills[2])
+	skills[3].SkillRequirements = append(skills[3].SkillRequirements, skills[2])
 }
 
 func main() {
@@ -44,6 +44,10 @@ func setupDatabase() {
 	dbConnection.Password = os.Getenv("DATABASE_PASSWORD")
 
 	dbConnection.Setup()
+
+	database.GetDB().AutoMigrate([]hero.Skill{})
+	database.GetDB().AutoMigrate([]hero.Class{})
+	database.GetDB().AutoMigrate([]hero.Race{})
 }
 
 func setupRoutes(router *gin.Engine) {
@@ -67,7 +71,7 @@ func getRaces(c *gin.Context) {
 }
 
 func getRaceByID(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
 		return
@@ -113,7 +117,7 @@ func getClasses(c *gin.Context) {
 }
 
 func getClassByID(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
 		return
@@ -148,15 +152,15 @@ func getClassesByProficiencies(c *gin.Context) {
 
 	if queryParamNotEmpty {
 		// Map helps deduplication, allows us some casting and provides a better way to write a "contains" feature.
-		proficiencyMap := make(map[hero.Proficiency]string)
+		proficiencyMap := make(map[hero.ProficiencyType]string)
 		for i := range proficiencies {
-			proficiencyMap[hero.Proficiency(proficiencies[i])] = proficiencies[i]
+			proficiencyMap[hero.ProficiencyType(proficiencies[i])] = proficiencies[i]
 		}
 
 		for i := range classes {
 			for j := range classes[i].Proficiencies {
 				// Checks for "contains" proficiency in the proficiency map
-				if _, ok := proficiencyMap[classes[i].Proficiencies[j]]; ok {
+				if _, ok := proficiencyMap[classes[i].Proficiencies[j].Name]; ok {
 					results = append(results, classes[i])
 					break // We only need to match a single proficiency to consider the class.
 				}
@@ -172,7 +176,7 @@ func getSkills(c *gin.Context) {
 }
 
 func getSkillByID(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
 		return
@@ -272,8 +276,11 @@ var classes = []hero.Class{
 			Intelligence: 0,
 			Willpower:    0,
 		},
-		Role:            hero.Fighter,
-		Proficiencies:   []hero.Proficiency{hero.SimpleWeapons, hero.ComplexWeapons},
+		Role: hero.Fighter,
+		Proficiencies: []hero.Proficiency{
+			{1, hero.SimpleWeapons},
+			{2, hero.ComplexWeapons},
+		},
 		StartingSkills:  []hero.Skill{},
 		AvailableSkills: []hero.Skill{skills[1]},
 	},
@@ -287,8 +294,11 @@ var classes = []hero.Class{
 			Intelligence: 1,
 			Willpower:    0,
 		},
-		Role:            hero.Dexterous,
-		Proficiencies:   []hero.Proficiency{hero.SimpleWeapons, hero.Pickpocket},
+		Role: hero.Dexterous,
+		Proficiencies: []hero.Proficiency{
+			{ID: 1, Name: hero.SimpleWeapons},
+			{ID: 5, Name: hero.Pickpocket},
+		},
 		StartingSkills:  []hero.Skill{},
 		AvailableSkills: []hero.Skill{},
 	},
@@ -302,8 +312,12 @@ var classes = []hero.Class{
 			Intelligence: 1,
 			Willpower:    1,
 		},
-		Role:            hero.Spellcaster,
-		Proficiencies:   []hero.Proficiency{hero.SimpleWeapons, hero.CastMagic, hero.ReadMagic},
+		Role: hero.Spellcaster,
+		Proficiencies: []hero.Proficiency{
+			{ID: 1, Name: hero.SimpleWeapons},
+			{ID: 3, Name: hero.CastMagic},
+			{ID: 4, Name: hero.ReadMagic},
+		},
 		StartingSkills:  []hero.Skill{},
 		AvailableSkills: []hero.Skill{skills[2], skills[3]},
 	},
@@ -312,76 +326,76 @@ var classes = []hero.Class{
 // Sample skills for mocking. Will be useful for unit testing later.
 var skills = []hero.Skill{
 	{
-		ID:               1,
-		Name:             "Mountain Vigor",
-		Description:      "You are immune to poisoning and can rol 3d6 when testing STR to resist fatigue.",
-		Bonus:            "",
-		Mana:             "",
-		DifficultyType:   hero.Auto,
-		Difficulty:       "",
-		Activation:       hero.Passive,
-		Source:           hero.FromRace,
-		Type:             hero.Characteristic,
-		LevelRequirement: hero.None,
-		SkillRequirement: []hero.Skill{},
-		Observations:     []string{},
+		ID:                1,
+		Name:              "Mountain Vigor",
+		Description:       "You are immune to poisoning and can rol 3d6 when testing STR to resist fatigue.",
+		Bonus:             "",
+		Mana:              "",
+		DifficultyType:    hero.Auto,
+		Difficulty:        "",
+		Activation:        hero.Passive,
+		Source:            hero.FromRace,
+		Type:              hero.Characteristic,
+		LevelRequirement:  hero.None,
+		SkillRequirements: []hero.Skill{},
+		Observations:      []string{},
 	}, {
-		ID:               2,
-		Name:             "War Cry",
-		Description:      "You unleashe a fervorous scream that motiates your allies. You and them receive +1 in every roll until the end of the turn.",
-		Bonus:            "This bonus is not cummulative.",
-		Mana:             "10",
-		DifficultyType:   hero.Auto,
-		Difficulty:       "",
-		Activation:       hero.Action,
-		Source:           hero.FromClass,
-		Type:             hero.Ability,
-		LevelRequirement: hero.None,
-		SkillRequirement: []hero.Skill{},
-		Observations:     []string{},
+		ID:                2,
+		Name:              "War Cry",
+		Description:       "You unleashe a fervorous scream that motiates your allies. You and them receive +1 in every roll until the end of the turn.",
+		Bonus:             "This bonus is not cummulative.",
+		Mana:              "10",
+		DifficultyType:    hero.Auto,
+		Difficulty:        "",
+		Activation:        hero.Action,
+		Source:            hero.FromClass,
+		Type:              hero.Ability,
+		LevelRequirement:  hero.None,
+		SkillRequirements: []hero.Skill{},
+		Observations:      []string{},
 	}, {
-		ID:               3,
-		Name:             "Hellfire",
-		Description:      "You engulf a 4m ground area in flames. Everyone making contact will take 10 damage (fire) and another 10 damage (fire) per subsequent round they remain there. Lasts for 3 rounds.",
-		Bonus:            "Must be cast with a staff.",
-		Mana:             "30",
-		DifficultyType:   hero.Fixed,
-		Difficulty:       "12",
-		Activation:       hero.Action,
-		Source:           hero.FromClass,
-		Type:             hero.Spell,
-		LevelRequirement: hero.None,
-		SkillRequirement: []hero.Skill{},
-		Observations:     []string{},
+		ID:                3,
+		Name:              "Hellfire",
+		Description:       "You engulf a 4m ground area in flames. Everyone making contact will take 10 damage (fire) and another 10 damage (fire) per subsequent round they remain there. Lasts for 3 rounds.",
+		Bonus:             "Must be cast with a staff.",
+		Mana:              "30",
+		DifficultyType:    hero.Fixed,
+		Difficulty:        "12",
+		Activation:        hero.Action,
+		Source:            hero.FromClass,
+		Type:              hero.Spell,
+		LevelRequirement:  hero.None,
+		SkillRequirements: []hero.Skill{},
+		Observations:      []string{},
 	},
 	{
-		ID:               4,
-		Name:             "Hellfire II",
-		Description:      "You engulf a 4m diameter ground area in flames and it starts raining fire. Everyone inside will take 20 damage (fire) and another 20 damage (fire) per subsequent round they remain there. Lasts for 3 rounds.",
-		Bonus:            "Must be cast with a staff.",
-		Mana:             "40",
-		DifficultyType:   hero.Fixed,
-		Difficulty:       "12",
-		Activation:       hero.Action,
-		Source:           hero.FromClass,
-		Type:             hero.Spell,
-		LevelRequirement: hero.Advanced,
-		SkillRequirement: []hero.Skill{},
-		Observations:     []string{},
+		ID:                4,
+		Name:              "Hellfire II",
+		Description:       "You engulf a 4m diameter ground area in flames and it starts raining fire. Everyone inside will take 20 damage (fire) and another 20 damage (fire) per subsequent round they remain there. Lasts for 3 rounds.",
+		Bonus:             "Must be cast with a staff.",
+		Mana:              "40",
+		DifficultyType:    hero.Fixed,
+		Difficulty:        "12",
+		Activation:        hero.Action,
+		Source:            hero.FromClass,
+		Type:              hero.Spell,
+		LevelRequirement:  hero.Advanced,
+		SkillRequirements: []hero.Skill{},
+		Observations:      []string{},
 	},
 	{
-		ID:               5,
-		Name:             "Apprentice of [class]",
-		Description:      "Immediately choose a different class than yours when acquiring this skill. You gain all of its proficiencies and can acquire its skills as of your own.",
-		Bonus:            "",
-		Mana:             "",
-		DifficultyType:   hero.Auto,
-		Difficulty:       "",
-		Activation:       hero.Passive,
-		Source:           hero.Base,
-		Type:             hero.Technique,
-		LevelRequirement: hero.None,
-		SkillRequirement: []hero.Skill{},
-		Observations:     []string{"You class is still considered to be your main class for any in-game purposes."},
+		ID:                5,
+		Name:              "Apprentice of [class]",
+		Description:       "Immediately choose a different class than yours when acquiring this skill. You gain all of its proficiencies and can acquire its skills as of your own.",
+		Bonus:             "",
+		Mana:              "",
+		DifficultyType:    hero.Auto,
+		Difficulty:        "",
+		Activation:        hero.Passive,
+		Source:            hero.Base,
+		Type:              hero.Technique,
+		LevelRequirement:  hero.None,
+		SkillRequirements: []hero.Skill{},
+		Observations:      []string{"You class is still considered to be your main class for any in-game purposes."},
 	},
 }

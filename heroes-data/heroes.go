@@ -2,43 +2,43 @@ package heroes
 
 // Race represents the player's hero being, like Human or Elf. They have base attributes for the character and learn racial skills.
 type Race struct {
-	ID                 int       `json:"id"`
+	ID                 uint64    `json:"id" gorm:"primary_key"`
 	Name               string    `json:"name"`
 	Description        string    `json:"description"`
-	BaseAttributes     Attribute `json:"base_attributes"`
-	StartingSkills     []Skill   `json:"starting_skills"`
-	AvailableSkills    []Skill   `json:"available_skills"`
-	RecommendedClasses []Class   `json:"recommendedClasses"`
+	BaseAttributes     Attribute `json:"base_attributes" gorm:"embedded;embeddedPrefix:base_"`
+	StartingSkills     []Skill   `json:"starting_skills" gorm:"many2many:race_starting_skills;"`
+	AvailableSkills    []Skill   `json:"available_skills" gorm:"many2many:race_available_skills;"`
+	RecommendedClasses []Class   `json:"recommendedClasses" gorm:"many2many:race_recommended_classes;"`
 }
 
 // Class represents how a hero is specialized, like Warrior or Wizard. They give bonus attributes depending on their skillset.
 type Class struct {
-	ID              int           `json:"id"`
+	ID              uint64        `json:"id" gorm:"primary_key"`
 	Name            string        `json:"name"`
 	Description     string        `json:"description"`
-	BonusAttributes Attribute     `json:"bonus_attributes"`
+	BonusAttributes Attribute     `json:"bonus_attributes" gorm:"embedded;embeddedPrefix:bonus_"`
 	Role            Role          `json:"role"`
-	Proficiencies   []Proficiency `json:"proficiencies"`
-	StartingSkills  []Skill       `json:"starting_skills"`
-	AvailableSkills []Skill       `json:"available_skills"`
+	Proficiencies   []Proficiency `json:"proficiencies" gorm:"embedded"`
+	StartingSkills  []Skill       `json:"starting_skills" gorm:"many2many:class_starting_skills;"`
+	AvailableSkills []Skill       `json:"available_skills" gorm:"many2many:class_available_skills;"`
 }
 
 // Skill is a hero ability.
 // They can be either race or class skills, might be techniques or spells and require a minimum level or previous skill knowledge.
 type Skill struct {
-	ID               int              `json:"id"`
-	Name             string           `json:"name"`
-	Description      string           `json:"description"`
-	Bonus            string           `json:"bonus"`
-	Mana             string           `json:"mana"`
-	DifficultyType   DifficultyType   `json:"difficulty_type"`
-	Difficulty       string           `json:"difficulty"`
-	Activation       Activation       `json:"activation"`
-	Source           Source           `json:"source"`
-	Type             SkillType        `json:"type"`
-	LevelRequirement LevelRequirement `json:"level_requirement"`
-	SkillRequirement []Skill          `json:"skill_requirement"`
-	Observations     []string         `json:"observations"`
+	ID                uint64           `json:"id" gorm:"primary_key"`
+	Name              string           `json:"name"`
+	Description       string           `json:"description"`
+	Bonus             string           `json:"bonus"`
+	Mana              string           `json:"mana"`
+	DifficultyType    DifficultyType   `json:"difficulty_type" gorm:"embedded"`
+	Difficulty        string           `json:"difficulty"`
+	Activation        Activation       `json:"activation" gorm:"embedded"`
+	Source            Source           `json:"source" gorm:"embedded"`
+	Type              SkillType        `json:"type" gorm:"embedded"`
+	LevelRequirement  LevelRequirement `json:"level_requirement" gorm:"embedded"`
+	SkillRequirements []Skill          `json:"skill_requirement" gorm:"many2many:skill_requirements;"`
+	Observations      []string         `json:"observations"`
 }
 
 // Attribute is a hero measurement of power. Heroes have strength (physical power), agility (velocity and dexterity),
@@ -50,21 +50,27 @@ type Attribute struct {
 	Willpower    int `json:"willpower"`
 }
 
-// Proficiency represents natural abilities from classes, like being able to use complex weapons or cast magic.
+// Proficiency represents natural abilities from classes.
 // Classes come with two proficiencies, but might acquire more by multiclassing.
-type Proficiency string
+type Proficiency struct {
+	ID   uint64          `json:"id" gorm:"primary_key"`
+	Name ProficiencyType `json:"proficiency_type" gorm:"embedded"`
+}
+
+// ProficiencyType specifies the kind of natural abilities this class can make use of.
+type ProficiencyType string
 
 const (
 	// SimpleWeapons allows usage of small cold weapons, such as daggers, shortswords, handaxes, bows and crossbows.
-	SimpleWeapons Proficiency = "simple_weapons"
+	SimpleWeapons ProficiencyType = "simple_weapons"
 	// ComplexWeapons allows usage of bigger cold weapons, such as longswords, greataxes, lances, warbows and heavy crossbows.
-	ComplexWeapons Proficiency = "complex_weapons"
+	ComplexWeapons ProficiencyType = "complex_weapons"
 	// CastMagic allows spellcasting, such as Wizard's Fireball or Hellfire.
-	CastMagic Proficiency = "cast_magic"
+	CastMagic ProficiencyType = "cast_magic"
 	// ReadMagic allows reading magically engraved itens, such as spellbooks, runes or enchanted weapons.
-	ReadMagic Proficiency = "read_magic"
+	ReadMagic ProficiencyType = "read_magic"
 	// Pickpocket allows picking locks, disarming traps and stealing from unsuspecting pockets.
-	Pickpocket Proficiency = "pickpocket"
+	Pickpocket ProficiencyType = "pickpocket"
 )
 
 // Role represents overall class strategies: physical fighting, magical casting or dexterity usage. Classes usually have only one role.
