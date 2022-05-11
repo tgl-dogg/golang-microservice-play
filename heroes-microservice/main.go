@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	hero "github.com/tgl-dogg/golang-microservice-play/heroes-data"
+	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/database"
 )
 
 func init() {
@@ -16,7 +18,25 @@ func init() {
 }
 
 func main() {
+	setupDatabase()
+
 	router := gin.Default()
+	setupRoutes(router)
+	router.Run("localhost:8080")
+}
+
+func setupDatabase() {
+	var dbConnection database.DBConnection
+	dbConnection.Host = os.Getenv("DATABASE_HOST")
+	dbConnection.Port = os.Getenv("DATABASE_PORT")
+	dbConnection.DBName = os.Getenv("DATABASE_NAME")
+	dbConnection.User = os.Getenv("DATABASE_USER")
+	dbConnection.Password = os.Getenv("DATABASE_PASSWORD")
+
+	dbConnection.Setup()
+}
+
+func setupRoutes(router *gin.Engine) {
 	router.GET("/races", getRaces)
 	router.GET("/races/:id", getRaceByID)
 	router.GET("/races-by-recommended-classes", getRacesByRecommendedClasses)
@@ -30,8 +50,6 @@ func main() {
 	router.GET("/skills/:id", getSkillByID)
 	router.GET("/skills-by-type/:type", getSkillsByType)
 	router.GET("/skills-by-source/:source", getSkillsBySource)
-
-	router.Run("localhost:8080")
 }
 
 func getRaces(c *gin.Context) {
