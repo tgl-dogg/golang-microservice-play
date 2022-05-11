@@ -338,7 +338,7 @@ var skills = []hero.Skill{
 		Type:              hero.Characteristic,
 		LevelRequirement:  hero.None,
 		SkillRequirements: []hero.Skill{},
-		Observations:      []string{},
+		Observations:      "",
 	}, {
 		ID:                2,
 		Name:              "War Cry",
@@ -352,7 +352,7 @@ var skills = []hero.Skill{
 		Type:              hero.Ability,
 		LevelRequirement:  hero.None,
 		SkillRequirements: []hero.Skill{},
-		Observations:      []string{},
+		Observations:      "",
 	}, {
 		ID:                3,
 		Name:              "Hellfire",
@@ -366,7 +366,7 @@ var skills = []hero.Skill{
 		Type:              hero.Spell,
 		LevelRequirement:  hero.None,
 		SkillRequirements: []hero.Skill{},
-		Observations:      []string{},
+		Observations:      "",
 	},
 	{
 		ID:                4,
@@ -381,7 +381,7 @@ var skills = []hero.Skill{
 		Type:              hero.Spell,
 		LevelRequirement:  hero.Advanced,
 		SkillRequirements: []hero.Skill{},
-		Observations:      []string{},
+		Observations:      "",
 	},
 	{
 		ID:                5,
@@ -396,6 +396,6 @@ var skills = []hero.Skill{
 		Type:              hero.Technique,
 		LevelRequirement:  hero.None,
 		SkillRequirements: []hero.Skill{},
-		Observations:      []string{"You class is still considered to be your main class for any in-game purposes."},
+		Observations:      "You class is still considered to be your main class for any in-game purposes.",
 	},
 }

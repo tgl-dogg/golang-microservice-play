@@ -18,7 +18,7 @@ type Class struct {
 	Description     string        `json:"description"`
 	BonusAttributes Attribute     `json:"bonus_attributes" gorm:"embedded;embeddedPrefix:bonus_"`
 	Role            Role          `json:"role"`
-	Proficiencies   []Proficiency `json:"proficiencies" gorm:"embedded"`
+	Proficiencies   []Proficiency `json:"proficiencies" gorm:"many2many:class_proficiencies;"`
 	StartingSkills  []Skill       `json:"starting_skills" gorm:"many2many:class_starting_skills;"`
 	AvailableSkills []Skill       `json:"available_skills" gorm:"many2many:class_available_skills;"`
 }
@@ -38,7 +38,7 @@ type Skill struct {
 	Type              SkillType        `json:"type" gorm:"embedded"`
 	LevelRequirement  LevelRequirement `json:"level_requirement" gorm:"embedded"`
 	SkillRequirements []Skill          `json:"skill_requirement" gorm:"many2many:skill_requirements;"`
-	Observations      []string         `json:"observations"`
+	Observations      string           `json:"observations"`
 }
 
 // Attribute is a hero measurement of power. Heroes have strength (physical power), agility (velocity and dexterity),
