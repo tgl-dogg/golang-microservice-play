@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	hero "github.com/tgl-dogg/golang-microservice-play/heroes-data"
 	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/database"
 )
@@ -18,11 +20,19 @@ func init() {
 }
 
 func main() {
+	loadEnvFiles()
 	setupDatabase()
 
 	router := gin.Default()
 	setupRoutes(router)
 	router.Run("localhost:8080")
+}
+
+func loadEnvFiles() {
+	err := godotenv.Load("local.env")
+	if err != nil {
+		log.Fatalf("Some error occured while loading .env file. Err: %s", err)
+	}
 }
 
 func setupDatabase() {
