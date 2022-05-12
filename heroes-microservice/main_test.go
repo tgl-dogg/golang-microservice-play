@@ -3,6 +3,9 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,42 +20,41 @@ import (
 	"gorm.io/gorm"
 )
 
-func setup(t *testing.T) (db *sql.DB, mock sqlmock.Sqlmock, repository database.Repository) {
+var emptyRows = sqlmock.NewRows([]string{"id"})
+var mockError = errors.New("Mock error.")
+
+func setup() (db *sql.DB, mock sqlmock.Sqlmock, repository database.Repository) {
+	// Open sqlmock connection.
 	db, mock, err := sqlmock.New()
 	if err != nil {
-		t.Fatalf("Error '%s' was not expected when opening a stub database connection.", err)
+		panic(fmt.Sprintf("Error '%s' was not expected when opening a stub database connection.", err))
 	}
 
+	// Inject mocked connection into gormDB.
 	gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: db}), &gorm.Config{})
 	if err != nil {
-		t.Errorf("Failed to open gorm db, got error: %v", err)
+		panic(fmt.Sprintf("Failed to open gorm db, got error: %v", err))
 	}
-	repository = database.NewRepository(gormDB)
 
+	// Pass our mocked database connection to the repository wrapper.
+	repository = database.NewRepository(gormDB)
 	return
 }
 
-func shutdown(t *testing.T, mock sqlmock.Sqlmock) {
-	// We make sure that all expectations were met.
+func shutdown(mock sqlmock.Sqlmock) {
+	// Make sure that all expectations were met.
 	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("There were unfulfilled expectations: %s", err)
+		panic(fmt.Sprintf("There were unfulfilled expectations: %s", err))
 	}
 }
 
 func Test_GetRaces_OK(t *testing.T) {
 	r := gin.New()
 	r.GET("/", getRaces)
-	resp := emulateRequest(r, "/")
-
-	if resp.Code != http.StatusOK {
-		t.Error("HTTP request status code error.")
-	}
+	resp := emulateRequest(r, "/", http.StatusOK)
 
 	var races []hero.Race
-	err := json.NewDecoder(resp.Body).Decode(&races)
-	if err != nil {
-		t.Fatal(err)
-	}
+	decodeJSON(resp.Body, &races)
 
 	if len(races) < 1 {
 		t.Error("Invalid records found:", races)
@@ -60,7 +62,7 @@ func Test_GetRaces_OK(t *testing.T) {
 }
 
 func Test_GetRaceByID_OK(t *testing.T) {
-	db, mock, repository := setup(t)
+	db, mock, repository := setup()
 	defer db.Close()
 	repository.GetDB()
 
@@ -69,33 +71,22 @@ func Test_GetRaceByID_OK(t *testing.T) {
 
 	r := gin.New()
 	r.GET("/:id", getRaceByID)
-	resp := emulateRequest(r, "/1")
-
-	if resp.Code != http.StatusOK {
-		t.Error("HTTP request status code error.")
-	}
+	resp := emulateRequest(r, "/1", http.StatusOK)
 
 	var race hero.Race
-	err := json.NewDecoder(resp.Body).Decode(&race)
-	if err != nil {
-		t.Fatal(err)
-	}
+	decodeJSON(resp.Body, &race)
 
 	if race.Name != "Human" {
 		t.Error("Invalid record found:", race)
 	}
 
-	shutdown(t, mock)
+	shutdown(mock)
 }
 
 func Test_GetRaceByID_NOTFOUND(t *testing.T) {
 	r := gin.New()
 	r.GET("/:id", getRaceByID)
-	resp := emulateRequest(r, "/1000")
-
-	if resp.Code != http.StatusNotFound {
-		t.Error("HTTP request status code error.")
-	}
+	emulateRequest(r, "/1000", http.StatusNotFound)
 }
 
 func Test_GetRaceByID_INVALID(t *testing.T) {
@@ -103,11 +94,7 @@ func Test_GetRaceByID_INVALID(t *testing.T) {
 
 	r := gin.New()
 	r.GET("/:id", getRaceByID)
-	resp := emulateRequest(r, "/"+invalidID)
-
-	if resp.Code != http.StatusBadRequest {
-		t.Error("HTTP request status code error")
-	}
+	resp := emulateRequest(r, "/"+invalidID, http.StatusBadRequest)
 
 	body := resp.Body.String()
 	if !strings.Contains(body, invalidID) {
@@ -118,17 +105,10 @@ func Test_GetRaceByID_INVALID(t *testing.T) {
 func Test_GetRaceByRecommendedClasses_OK(t *testing.T) {
 	r := gin.New()
 	r.GET("/mock", getRacesByRecommendedClasses)
-	resp := emulateRequest(r, "/mock?classes=thi&classes=war")
+	resp := emulateRequest(r, "/mock?classes=thief&classes=warrior", http.StatusOK)
 
 	var races []hero.Race
-	err := json.NewDecoder(resp.Body).Decode(&races)
-	if err != nil {
-		t.Fatal(err, resp.Body)
-	}
-
-	if resp.Code != http.StatusOK {
-		t.Error("HTTP request status code error.")
-	}
+	decodeJSON(resp.Body, &races)
 
 	if !isRacePresent(races, "Human") {
 		t.Error("Expected Human race to be found.")
@@ -142,17 +122,10 @@ func Test_GetRaceByRecommendedClasses_OK(t *testing.T) {
 func Test_GetRaceByRecommendedClasses_EMPTY(t *testing.T) {
 	r := gin.New()
 	r.GET("/mock", getRacesByRecommendedClasses)
-	resp := emulateRequest(r, "/mock?classes=biruleibes")
+	resp := emulateRequest(r, "/mock?classes=biruleibes", http.StatusOK)
 
 	var races []hero.Race
-	err := json.NewDecoder(resp.Body).Decode(&races)
-	if err != nil {
-		t.Fatal(err, resp.Body)
-	}
-
-	if resp.Code != http.StatusOK {
-		t.Error("HTTP request status code error.")
-	}
+	decodeJSON(resp.Body, &races)
 
 	if len(races) > 0 {
 		t.Error("Expected to found empty races set:", races)
@@ -169,8 +142,44 @@ func isRacePresent(races []hero.Race, name string) bool {
 	return false
 }
 
+func Test_GetClasses_OK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	ch := controllers.NewClassController(repository)
+
+	rows := mock.NewRows([]string{"id", "name"}).AddRow(1, "Warrior").AddRow(2, "Thief").AddRow(3, "Wizard")
+	mock.ExpectQuery("SELECT (.+) FROM \"classes\"").WillReturnRows(rows)
+
+	r := gin.New()
+	r.GET("/", ch.GetAll)
+	resp := emulateRequest(r, "/", http.StatusOK)
+
+	var classes []hero.Class
+	decodeJSON(resp.Body, &classes)
+
+	if len(classes) != 3 {
+		t.Error("Invalid records found:", classes)
+	}
+
+	shutdown(mock)
+}
+
+func Test_GetClasses_NOK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	ch := controllers.NewClassController(repository)
+
+	mock.ExpectQuery("SELECT (.+) FROM \"classes\"").WillReturnError(mockError)
+
+	r := gin.New()
+	r.GET("/", ch.GetAll)
+	emulateRequest(r, "/", http.StatusInternalServerError)
+
+	shutdown(mock)
+}
+
 func Test_GetClassByID_OK(t *testing.T) {
-	db, mock, repository := setup(t)
+	db, mock, repository := setup()
 	defer db.Close()
 	ch := controllers.NewClassController(repository)
 
@@ -183,63 +192,145 @@ func Test_GetClassByID_OK(t *testing.T) {
 
 	r := gin.New()
 	r.GET("/:id", ch.GetByID)
-	resp := emulateRequest(r, "/1")
-
-	if resp.Code != http.StatusOK {
-		t.Error("HTTP request status code error.")
-	}
+	resp := emulateRequest(r, "/1", http.StatusOK)
 
 	var class hero.Class
-	err := json.NewDecoder(resp.Body).Decode(&class)
-	if err != nil {
-		t.Fatal(err)
-	}
+	decodeJSON(resp.Body, &class)
 
 	if class.Name != "Warrior" {
 		t.Error("Invalid record found:", class)
 	}
 
-	shutdown(t, mock)
+	shutdown(mock)
 }
 
 func Test_GetClassByID_INVALID(t *testing.T) {
-	db, mock, repository := setup(t)
+	db, mock, repository := setup()
 	defer db.Close()
 	ch := controllers.NewClassController(repository)
 
 	invalidID := "98a11010-d019-11ec-9d64-0242ac120002"
 	r := gin.New()
 	r.GET("/:id", ch.GetByID)
-	resp := emulateRequest(r, "/"+invalidID)
-
-	if resp.Code != http.StatusBadRequest {
-		t.Error("HTTP request status code error")
-	}
+	resp := emulateRequest(r, "/"+invalidID, http.StatusBadRequest)
 
 	body := resp.Body.String()
 	if !strings.Contains(body, invalidID) {
 		t.Error("Invalid response error:", body)
 	}
 
-	shutdown(t, mock)
+	shutdown(mock)
 }
 
-func emulateRequest(r *gin.Engine, url string) *httptest.ResponseRecorder {
-	/*req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		panic(err)
-	}*/
+func Test_GetClassByID_NOTFOUND(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	ch := controllers.NewClassController(repository)
 
+	mock.ExpectQuery("SELECT (.+) FROM \"classes\" (.+)").WillReturnRows(emptyRows)
+
+	r := gin.New()
+	r.GET("/:id", ch.GetByID)
+	emulateRequest(r, "/1", http.StatusNotFound)
+
+	shutdown(mock)
+}
+
+func Test_GetClassByRole_OK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	ch := controllers.NewClassController(repository)
+
+	rows := mock.NewRows([]string{"id", "name", "role"}).AddRow(1, "Warrior", "fighter")
+	mock.ExpectQuery("SELECT (.+) FROM \"classes\" WHERE \"classes\".\"role\" = ? (.+)").WithArgs("fighter").WillReturnRows(rows)
+
+	r := gin.New()
+	r.GET("/:role", ch.GetByRole)
+	resp := emulateRequest(r, "/fighter", http.StatusOK)
+
+	var classes []hero.Class
+	decodeJSON(resp.Body, &classes)
+
+	if classes[0].Role != "fighter" {
+		t.Error("Invalid record found:", classes[0])
+	}
+
+	shutdown(mock)
+}
+
+func Test_GetClassByRole_NOK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	ch := controllers.NewClassController(repository)
+
+	mock.ExpectQuery("SELECT (.+) FROM \"classes\" (.+)").WillReturnError(mockError)
+
+	r := gin.New()
+	r.GET("/:role", ch.GetByRole)
+	emulateRequest(r, "/malandro", http.StatusNotFound)
+
+	shutdown(mock)
+}
+
+func Test_GetClassByProficiencies_OK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	ch := controllers.NewClassController(repository)
+
+	rows := mock.NewRows([]string{"id", "name"}).AddRow(1, "Warrior").AddRow(3, "Wizard")
+	mock.ExpectQuery("SELECT (.+) FROM \"classes\"").WillReturnRows(rows)
+
+	r := gin.New()
+	r.GET("/mock", ch.GetByProficiencies)
+	resp := emulateRequest(r, "/mock?proficiencies=complex_weapons&proficiencies=cast_magic", http.StatusOK)
+
+	var classes []hero.Class
+	decodeJSON(resp.Body, &classes)
+
+	if len(classes) != 2 {
+		t.Error("Invalid record found:", classes)
+	}
+
+	shutdown(mock)
+}
+
+func Test_GetClassByProficiencies_NOK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	ch := controllers.NewClassController(repository)
+
+	mock.ExpectQuery("SELECT (.+) FROM \"classes\"").WillReturnError(mockError)
+
+	r := gin.New()
+	r.GET("/mock", ch.GetByProficiencies)
+	emulateRequest(r, "/mock?proficiencies=foresight", http.StatusNotFound)
+
+	shutdown(mock)
+}
+
+func emulateRequest(r *gin.Engine, url string, expectedHttpStatus int) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Content-Type", "application/json")
+
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
+
+	if w.Code != expectedHttpStatus {
+		panic(fmt.Sprintf("HTTP request status code error. Expected: %d, found: %d", expectedHttpStatus, w.Code))
+	}
 
 	return w
 }
 
+func decodeJSON(r io.Reader, v any) {
+	err := json.NewDecoder(r).Decode(&v)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // Sample races for mocking. Will be useful for unit testing later.
-var races = []hero.Race{
+var mockRaces = []hero.Race{
 	{
 		ID:          1,
 		Name:        "Human",
@@ -252,7 +343,7 @@ var races = []hero.Race{
 		},
 		StartingSkills:     []hero.Skill{},
 		AvailableSkills:    []hero.Skill{},
-		RecommendedClasses: classes,
+		RecommendedClasses: mockClasses,
 	},
 	{
 		ID:          2,
@@ -266,7 +357,7 @@ var races = []hero.Race{
 		},
 		StartingSkills:     []hero.Skill{},
 		AvailableSkills:    []hero.Skill{},
-		RecommendedClasses: []hero.Class{classes[1]},
+		RecommendedClasses: []hero.Class{mockClasses[1]},
 	},
 	{
 		ID:          3,
@@ -278,14 +369,14 @@ var races = []hero.Race{
 			Intelligence: 3,
 			Willpower:    3,
 		},
-		StartingSkills:     []hero.Skill{skills[0]},
+		StartingSkills:     []hero.Skill{mockSkills[0]},
 		AvailableSkills:    []hero.Skill{},
-		RecommendedClasses: []hero.Class{classes[0]},
+		RecommendedClasses: []hero.Class{mockClasses[0]},
 	},
 }
 
 // Sample classes for mocking. Will be useful for unit testing later.
-var classes = []hero.Class{
+var mockClasses = []hero.Class{
 	{
 		ID:          1,
 		Name:        "Warrior",
@@ -302,7 +393,7 @@ var classes = []hero.Class{
 			{ID: 2, Name: hero.ComplexWeapons},
 		},
 		StartingSkills:  []hero.Skill{},
-		AvailableSkills: []hero.Skill{skills[1]},
+		AvailableSkills: []hero.Skill{mockSkills[1]},
 	},
 	{
 		ID:          2,
@@ -339,12 +430,12 @@ var classes = []hero.Class{
 			{ID: 4, Name: hero.ReadMagic},
 		},
 		StartingSkills:  []hero.Skill{},
-		AvailableSkills: []hero.Skill{skills[2], skills[3]},
+		AvailableSkills: []hero.Skill{mockSkills[2], mockSkills[3]},
 	},
 }
 
 // Sample skills for mocking. Will be useful for unit testing later.
-var skills = []hero.Skill{
+var mockSkills = []hero.Skill{
 	{
 		ID:                1,
 		Name:              "Mountain Vigor",

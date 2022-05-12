@@ -49,7 +49,6 @@ func (h *ClassController) GetByRole(c *gin.Context) {
 	var classes []heroes.Class
 	role := heroes.Role(strings.ToLower(c.Param("role")))
 
-	// "role", string(role)
 	if h.repository.FindByField(&classes, &heroes.Class{Role: role}) {
 		c.IndentedJSON(http.StatusOK, classes)
 	} else {
