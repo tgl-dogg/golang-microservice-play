@@ -9,13 +9,13 @@ import (
 	"strconv"
 	"strings"
 
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/tgl-dogg/golang-microservice-play/heroes-data"
-	hero "github.com/tgl-dogg/golang-microservice-play/heroes-data"
 	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/database"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func main() {
@@ -45,9 +45,9 @@ func setupDatabase() {
 	dbConnection.Setup()
 
 	if os.Getenv("RUN_MIGRATIONS") == "true" {
-		database.GetDB().AutoMigrate([]hero.Skill{})
-		database.GetDB().AutoMigrate([]hero.Class{})
-		database.GetDB().AutoMigrate([]hero.Race{})
+		database.GetDB().AutoMigrate([]heroes.Skill{})
+		database.GetDB().AutoMigrate([]heroes.Class{})
+		database.GetDB().AutoMigrate([]heroes.Race{})
 	}
 }
 
@@ -117,7 +117,7 @@ func getClassByID(c *gin.Context) {
 
 func getClassesByRole(c *gin.Context) {
 	var classes []heroes.Class
-	role := hero.Role(strings.ToLower(c.Param("role")))
+	role := heroes.Role(strings.ToLower(c.Param("role")))
 
 	if findByField(c, &classes, &heroes.Class{Role: role}, "role", string(role)) {
 		c.IndentedJSON(http.StatusOK, classes)
@@ -148,7 +148,7 @@ func getSkills(c *gin.Context) {
 }
 
 func getSkillByID(c *gin.Context) {
-	var skill hero.Skill
+	var skill heroes.Skill
 	if findById(c, &skill) {
 		c.IndentedJSON(http.StatusOK, skill)
 	}
@@ -156,7 +156,7 @@ func getSkillByID(c *gin.Context) {
 
 func getSkillsByType(c *gin.Context) {
 	var skills []heroes.Skill
-	skillType := hero.SkillType(strings.ToLower(c.Param("type")))
+	skillType := heroes.SkillType(strings.ToLower(c.Param("type")))
 
 	if findByField(c, &skills, &heroes.Skill{Type: skillType}, "type", string(skillType)) {
 		c.IndentedJSON(http.StatusOK, skills)
@@ -165,7 +165,7 @@ func getSkillsByType(c *gin.Context) {
 
 func getSkillsBySource(c *gin.Context) {
 	var skills []heroes.Skill
-	source := hero.Source(strings.ToLower(c.Param("source")))
+	source := heroes.Source(strings.ToLower(c.Param("source")))
 
 	if findByField(c, &skills, &heroes.Skill{Source: source}, "source", string(source)) {
 		c.IndentedJSON(http.StatusOK, skills)

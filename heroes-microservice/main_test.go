@@ -1,17 +1,36 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
 	hero "github.com/tgl-dogg/golang-microservice-play/heroes-data"
 )
 
+func setup(t *testing.T) (db *sql.DB, mock sqlmock.Sqlmock) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("Error '%s' was not expected when opening a stub database connection.", err)
+	}
+
+	return
+}
+
+func shutdown(t *testing.T, mock sqlmock.Sqlmock) {
+	// We make sure that all expectations were met.
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("There were unfulfilled expectations: %s", err)
+	}
+}
+
 func Test_GetRaces_OK(t *testing.T) {
+
 	r := gin.New()
 	r.GET("/", getRaces)
 	resp := emulateRequest(r, "/")
@@ -32,6 +51,12 @@ func Test_GetRaces_OK(t *testing.T) {
 }
 
 func Test_GetRaceByID_OK(t *testing.T) {
+	db, mock := setup(t)
+	defer db.Close()
+
+	rows := sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "Human")
+	mock.ExpectQuery("SELECT").WithArgs(1).WillReturnRows(rows)
+
 	r := gin.New()
 	r.GET("/:id", getRaceByID)
 	resp := emulateRequest(r, "/1")
@@ -49,6 +74,8 @@ func Test_GetRaceByID_OK(t *testing.T) {
 	if race.Name != "Human" {
 		t.Error("Invalid record found:", race)
 	}
+
+	shutdown(t, mock)
 }
 
 func Test_GetRaceByID_NOTFOUND(t *testing.T) {
