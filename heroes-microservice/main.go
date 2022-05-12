@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +14,8 @@ import (
 	"github.com/tgl-dogg/golang-microservice-play/heroes-data"
 	hero "github.com/tgl-dogg/golang-microservice-play/heroes-data"
 	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/database"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func main() {
@@ -32,24 +35,26 @@ func loadEnvFiles() {
 }
 
 func setupDatabase() {
-	var dbConnection database.DBConnection
-	dbConnection.Host = os.Getenv("DATABASE_HOST")
-	dbConnection.Port = os.Getenv("DATABASE_PORT")
-	dbConnection.DBName = os.Getenv("DATABASE_NAME")
-	dbConnection.User = os.Getenv("DATABASE_USER")
-	dbConnection.Password = os.Getenv("DATABASE_PASSWORD")
-
+	dbConnection := database.DBConnection{
+		Host:     os.Getenv("DATABASE_HOST"),
+		Port:     os.Getenv("DATABASE_PORT"),
+		DBName:   os.Getenv("DATABASE_NAME"),
+		User:     os.Getenv("DATABASE_USER"),
+		Password: os.Getenv("DATABASE_PASSWORD"),
+	}
 	dbConnection.Setup()
 
-	database.GetDB().AutoMigrate([]hero.Skill{})
-	database.GetDB().AutoMigrate([]hero.Class{})
-	database.GetDB().AutoMigrate([]hero.Race{})
+	if os.Getenv("RUN_MIGRATIONS") == "true" {
+		database.GetDB().AutoMigrate([]hero.Skill{})
+		database.GetDB().AutoMigrate([]hero.Class{})
+		database.GetDB().AutoMigrate([]hero.Race{})
+	}
 }
 
 func setupRoutes(router *gin.Engine) {
 	router.GET("/races", getRaces)
 	router.GET("/races/:id", getRaceByID)
-	router.GET("/races-by-recommended-classes", getRacesByRecommendedClasses)
+	router.GET("/races/by-recommended-classes", getRacesByRecommendedClasses)
 
 	router.GET("/classes", getClasses)
 	router.GET("/classes/:id", getClassByID)
@@ -109,7 +114,7 @@ func getClassesByRole(c *gin.Context) {
 	var classes []heroes.Class
 	role := hero.Role(strings.ToLower(c.Param("role")))
 
-	if findByField(c, classes, &heroes.Class{Role: role}, "role", string(role)) {
+	if findByField(c, &classes, &heroes.Class{Role: role}, "role", string(role)) {
 		c.IndentedJSON(http.StatusOK, classes)
 	}
 }
@@ -119,7 +124,8 @@ func getClassesByProficiencies(c *gin.Context) {
 	proficiencies, queryParamNotEmpty := c.Request.URL.Query()["proficiencies"]
 
 	if queryParamNotEmpty {
-		if err := database.GetDB().Joins("Proficiencies", "name IN ?", proficiencies).Find(&classes).Error; err != nil {
+		rawQuery := "SELECT * from classes c INNER JOIN class_proficiencies cp ON (cp.class_id = c.id) INNER JOIN proficiencies p ON (cp.proficiency_id = p.id) WHERE p.name IN ?"
+		if err := database.GetDB().Raw(rawQuery, proficiencies).Scan(&classes).Error; err != nil {
 			log.Println("Error while executing getClassesByProficiencies: ", err)
 			c.JSON(http.StatusNotFound, fmt.Sprintf("{proficiencies: %s, message: \"Resource not found.\"}", proficiencies))
 			return
@@ -147,7 +153,7 @@ func getSkillsByType(c *gin.Context) {
 	var skills []heroes.Skill
 	skillType := hero.SkillType(strings.ToLower(c.Param("type")))
 
-	if findByField(c, skills, &heroes.Skill{Type: skillType}, "type", string(skillType)) {
+	if findByField(c, &skills, &heroes.Skill{Type: skillType}, "type", string(skillType)) {
 		c.IndentedJSON(http.StatusOK, skills)
 	}
 }
@@ -156,7 +162,7 @@ func getSkillsBySource(c *gin.Context) {
 	var skills []heroes.Skill
 	source := hero.Source(strings.ToLower(c.Param("source")))
 
-	if findByField(c, skills, &heroes.Skill{Source: source}, "source", string(source)) {
+	if findByField(c, &skills, &heroes.Skill{Source: source}, "source", string(source)) {
 		c.IndentedJSON(http.StatusOK, skills)
 	}
 }
@@ -178,9 +184,13 @@ func findById(c *gin.Context, dest interface{}) bool {
 		return false
 	}
 
-	if err := database.GetDB().Find(dest, id).Error; err != nil {
+	if err := database.GetDB().Preload(clause.Associations).First(dest, id).Error; err != nil {
 		log.Println("Error while executing getByID: ", err)
-		c.JSON(http.StatusNotFound, fmt.Sprintf("{id: %d, message: \"Resource not found.\"}", id))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, fmt.Sprintf("{id: %d, message: \"Resource not found.\"}", id))
+		} else {
+			c.JSON(http.StatusInternalServerError, "Unable to process your request right now. Please check with system administrator.")
+		}
 		return false
 	}
 
