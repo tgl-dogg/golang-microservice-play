@@ -9,16 +9,23 @@ import (
 	"strconv"
 	"strings"
 
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
-
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/tgl-dogg/golang-microservice-play/heroes-data"
+	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/controllers"
 	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/database"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func main() {
+	/*
+	   Separar conexão num arquivo repository.go que recebe um DB no setup;
+	   Separar uma classe com métodos de race, outra class e outra skills.
+	   Teste de API usa classe mockada
+	   Teste das classes usa DB mockado
+	*/
+
 	loadEnvFiles()
 	setupDatabase()
 
@@ -52,14 +59,17 @@ func setupDatabase() {
 }
 
 func setupRoutes(router *gin.Engine) {
+	repository := database.NewRepository(database.GetDB())
+
 	router.GET("/races", getRaces)
 	router.GET("/races/:id", getRaceByID)
 	router.GET("/races/by-recommended-classes", getRacesByRecommendedClasses)
 
-	router.GET("/classes", getClasses)
-	router.GET("/classes/:id", getClassByID)
-	router.GET("/classes/by-role/:role", getClassesByRole)
-	router.GET("/classes/by-proficiencies", getClassesByProficiencies)
+	class := controllers.NewClassController(repository)
+	router.GET("/classes", class.GetAll)
+	router.GET("/classes/:id", class.GetByID)
+	router.GET("/classes/by-role/:role", class.GetByRole)
+	router.GET("/classes/by-proficiencies", class.GetByProficiencies)
 
 	router.GET("/skills", getSkills)
 	router.GET("/skills/:id", getSkillByID)
@@ -172,6 +182,7 @@ func getSkillsBySource(c *gin.Context) {
 	}
 }
 
+//*
 func findAll(c *gin.Context, dest interface{}) bool {
 	if err := database.GetDB().Find(dest).Error; err != nil {
 		log.Println("Error while executing getAll: ", err)
@@ -211,3 +222,5 @@ func findByField(c *gin.Context, dest interface{}, query interface{}, field stri
 
 	return true
 }
+
+//*/
