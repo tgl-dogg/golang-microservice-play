@@ -11,13 +11,23 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
 	hero "github.com/tgl-dogg/golang-microservice-play/heroes-data"
+	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/controllers"
+	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/database"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-func setup(t *testing.T) (db *sql.DB, mock sqlmock.Sqlmock) {
+func setup(t *testing.T) (db *sql.DB, mock sqlmock.Sqlmock, repository database.Repository) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("Error '%s' was not expected when opening a stub database connection.", err)
 	}
+
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: db}), &gorm.Config{})
+	if err != nil {
+		t.Errorf("Failed to open gorm db, got error: %v", err)
+	}
+	repository = database.NewRepository(gormDB)
 
 	return
 }
@@ -30,7 +40,6 @@ func shutdown(t *testing.T, mock sqlmock.Sqlmock) {
 }
 
 func Test_GetRaces_OK(t *testing.T) {
-
 	r := gin.New()
 	r.GET("/", getRaces)
 	resp := emulateRequest(r, "/")
@@ -51,8 +60,9 @@ func Test_GetRaces_OK(t *testing.T) {
 }
 
 func Test_GetRaceByID_OK(t *testing.T) {
-	db, mock := setup(t)
+	db, mock, repository := setup(t)
 	defer db.Close()
+	repository.GetDB()
 
 	rows := sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "Human")
 	mock.ExpectQuery("SELECT").WithArgs(1).WillReturnRows(rows)
@@ -88,7 +98,7 @@ func Test_GetRaceByID_NOTFOUND(t *testing.T) {
 	}
 }
 
-func Test_GetRaceByID_IDINVALID(t *testing.T) {
+func Test_GetRaceByID_INVALID(t *testing.T) {
 	invalidID := "98a11010-d019-11ec-9d64-0242ac120002"
 
 	r := gin.New()
@@ -100,7 +110,6 @@ func Test_GetRaceByID_IDINVALID(t *testing.T) {
 	}
 
 	body := resp.Body.String()
-
 	if !strings.Contains(body, invalidID) {
 		t.Error("Invalid response error:", body)
 	}
@@ -160,12 +169,68 @@ func isRacePresent(races []hero.Race, name string) bool {
 	return false
 }
 
-func emulateRequest(r *gin.Engine, url string) *httptest.ResponseRecorder {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		panic(err)
+func Test_GetClassByID_OK(t *testing.T) {
+	db, mock, repository := setup(t)
+	defer db.Close()
+	ch := controllers.NewClassController(repository)
+
+	rows := mock.NewRows([]string{"id", "name"}).AddRow(1, "Warrior")
+	mock.ExpectQuery("SELECT (.+) FROM \"classes\" WHERE \"classes\".\"id\" = ? (.+)").WithArgs(1).WillReturnRows(rows)
+
+	mock.ExpectQuery("SELECT (.+) FROM \"class_available_skills\" (.+)").WillReturnRows(mock.NewRows([]string{"id"}))
+	mock.ExpectQuery("SELECT (.+) FROM \"class_proficiencies\" (.+)").WillReturnRows(mock.NewRows([]string{"id"}))
+	mock.ExpectQuery("SELECT (.+) FROM \"class_starting_skills\" (.+)").WillReturnRows(mock.NewRows([]string{"id"}))
+
+	r := gin.New()
+	r.GET("/:id", ch.GetByID)
+	resp := emulateRequest(r, "/1")
+
+	if resp.Code != http.StatusOK {
+		t.Error("HTTP request status code error.")
 	}
 
+	var class hero.Class
+	err := json.NewDecoder(resp.Body).Decode(&class)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if class.Name != "Warrior" {
+		t.Error("Invalid record found:", class)
+	}
+
+	shutdown(t, mock)
+}
+
+func Test_GetClassByID_INVALID(t *testing.T) {
+	db, mock, repository := setup(t)
+	defer db.Close()
+	ch := controllers.NewClassController(repository)
+
+	invalidID := "98a11010-d019-11ec-9d64-0242ac120002"
+	r := gin.New()
+	r.GET("/:id", ch.GetByID)
+	resp := emulateRequest(r, "/"+invalidID)
+
+	if resp.Code != http.StatusBadRequest {
+		t.Error("HTTP request status code error")
+	}
+
+	body := resp.Body.String()
+	if !strings.Contains(body, invalidID) {
+		t.Error("Invalid response error:", body)
+	}
+
+	shutdown(t, mock)
+}
+
+func emulateRequest(r *gin.Engine, url string) *httptest.ResponseRecorder {
+	/*req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		panic(err)
+	}*/
+
+	req := httptest.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
