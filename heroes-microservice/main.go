@@ -87,7 +87,7 @@ func getSkills(c *gin.Context) {
 
 func getSkillByID(c *gin.Context) {
 	var skill heroes.Skill
-	if findById(c, &skill) {
+	if findByID(c, &skill) {
 		c.IndentedJSON(http.StatusOK, skill)
 	}
 }
@@ -121,7 +121,7 @@ func findAll(c *gin.Context, dest interface{}) bool {
 	return true
 }
 
-func findById(c *gin.Context, dest interface{}) bool {
+func findByID(c *gin.Context, dest interface{}) bool {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))

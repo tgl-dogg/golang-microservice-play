@@ -346,15 +346,15 @@ func Test_GetClassByProficiencies_NOK(t *testing.T) {
 	shutdown(mock)
 }
 
-func emulateRequest(r *gin.Engine, url string, expectedHttpStatus int) *httptest.ResponseRecorder {
+func emulateRequest(r *gin.Engine, url string, expectedHTTPStatus int) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	if w.Code != expectedHttpStatus {
-		panic(fmt.Sprintf("HTTP request status code error. Expected: %d, found: %d", expectedHttpStatus, w.Code))
+	if w.Code != expectedHTTPStatus {
+		panic(fmt.Sprintf("HTTP request status code error. Expected: %d, found: %d", expectedHTTPStatus, w.Code))
 	}
 
 	return w

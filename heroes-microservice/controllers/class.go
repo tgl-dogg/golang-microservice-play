@@ -11,27 +11,33 @@ import (
 	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/database"
 )
 
+// ClassHandler implements dependency injection for Repository. This controller needs no visibility to database connections.
 type ClassHandler struct {
 	repository database.Repository
 }
 
+// NewClassHandler constructs a new handler so we don't need to expose its internal fields.
 func NewClassHandler(r database.Repository) ClassHandler {
 	return ClassHandler{r}
 }
 
+// GetAll instances of this entity.
 func (h *ClassHandler) GetAll(c *gin.Context) {
 	getAll(c, h.repository, &[]heroes.Class{})
 }
 
+// GetByID the entity with the provided value in path parameter.
 func (h *ClassHandler) GetByID(c *gin.Context) {
 	getByID(c, h.repository, &heroes.Class{})
 }
 
+// GetByRole retrieve all entities whose role matches the provided value in path parameter.
 func (h *ClassHandler) GetByRole(c *gin.Context) {
 	role := heroes.Role(strings.ToLower(c.Param("role")))
 	getByField(c, h.repository, &[]heroes.Class{}, &heroes.Class{Role: role})
 }
 
+// GetByProficiencies retrives all entities whose proficiencies match the parameters provided.
 func (h *ClassHandler) GetByProficiencies(c *gin.Context) {
 	var classes []heroes.Class
 	proficiencies, queryParamNotEmpty := c.Request.URL.Query()["proficiencies"]

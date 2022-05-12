@@ -11,22 +11,27 @@ import (
 	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/database"
 )
 
+// RaceHandler implements dependency injection for Repository. This controller needs no visibility to database connections.
 type RaceHandler struct {
 	repository database.Repository
 }
 
+// NewRaceHandler constructs a new handler so we don't need to expose its internal fields.
 func NewRaceHandler(r database.Repository) RaceHandler {
 	return RaceHandler{r}
 }
 
+// GetAll instances of this entity.
 func (h *RaceHandler) GetAll(c *gin.Context) {
 	getAll(c, h.repository, &[]heroes.Race{})
 }
 
+// GetByID the entity with the provided value in path parameter.
 func (h *RaceHandler) GetByID(c *gin.Context) {
 	getByID(c, h.repository, &heroes.Race{})
 }
 
+// GetByRecommendedClasses retrives all entities whose recommended classes match the parameters provided.
 func (h *RaceHandler) GetByRecommendedClasses(c *gin.Context) {
 	var races []heroes.Race
 	queryClasses, queryParamNotEmpty := c.Request.URL.Query()["classes"]
