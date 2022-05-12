@@ -24,7 +24,7 @@ func getByID(c *gin.Context, repository database.Repository, dest interface{}) {
 		return
 	}
 
-	if repository.FindById(dest, id) {
+	if repository.FindByID(dest, id) {
 		c.IndentedJSON(http.StatusOK, dest)
 	} else {
 		c.JSON(http.StatusNotFound, fmt.Sprintf("{id: %d, message: \"Resource not found.\"}", id))
