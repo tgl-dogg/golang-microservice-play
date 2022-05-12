@@ -39,7 +39,7 @@ func (h *RaceHandler) GetByRecommendedClasses(c *gin.Context) {
 
 		if err := h.repository.GetDB().Model(&races).Distinct().Preload("RecommendedClasses").Joins("INNER JOIN race_recommended_classes rc ON (rc.race_id = id)").Joins("INNER JOIN classes c ON (rc.class_id = c.id)").Where("LOWER(c.name) IN (?)", queryClasses).Find(&races).Error; err != nil {
 			log.Println("Error while executing getRacesByRecommendedClasses: ", err)
-			c.JSON(http.StatusNotFound, fmt.Sprintf("{classes: %s, message: \"Resource not found.\"}", queryClasses))
+			c.JSON(http.StatusInternalServerError, fmt.Sprintf("{classes: %s, message: \"Unable to process your request right now. Please check with system administrator.\"}", queryClasses))
 			return
 		}
 	}

@@ -35,6 +35,6 @@ func getByField(c *gin.Context, repository database.Repository, dest interface{}
 	if repository.FindByField(dest, query) {
 		c.IndentedJSON(http.StatusOK, dest)
 	} else {
-		c.JSON(http.StatusNotFound, fmt.Sprintf("{field: %s, message: \"Resource not found.\"}", query))
+		c.JSON(http.StatusInternalServerError, fmt.Sprintf("{field: %s, message: \"Resource not found.\"}", query))
 	}
 }

@@ -40,7 +40,7 @@ func (h *ClassHandler) GetByProficiencies(c *gin.Context) {
 		// rawQuery := "SELECT * from classes c INNER JOIN class_proficiencies cp ON (cp.class_id = c.id) INNER JOIN proficiencies p ON (cp.proficiency_id = p.id) WHERE p.name IN ?"
 		if err := h.repository.GetDB().Model(&classes).Distinct().Joins("INNER JOIN class_proficiencies cp ON (cp.class_id = id)").Joins("INNER JOIN proficiencies p ON (cp.proficiency_id = p.id)").Where("p.name IN ?", proficiencies).Find(&classes).Error; err != nil {
 			log.Println("Error while executing getClassesByProficiencies: ", err)
-			c.JSON(http.StatusNotFound, fmt.Sprintf("{proficiencies: %s, message: \"Resource not found.\"}", proficiencies))
+			c.JSON(http.StatusInternalServerError, fmt.Sprintf("{proficiencies: %s, message: \"Unable to process your request right now. Please check with system administrator.\"}", proficiencies))
 			return
 		}
 	}
