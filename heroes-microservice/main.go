@@ -86,7 +86,12 @@ func getRacesByRecommendedClasses(c *gin.Context) {
 	queryClasses, queryParamNotEmpty := c.Request.URL.Query()["classes"]
 
 	if queryParamNotEmpty {
-		if err := database.GetDB().Joins("Class", "name IN ?", queryClasses).Find(&races).Error; err != nil {
+		// Lowercasing params because SQL's IN clause is not case insensitive.
+		for i := range queryClasses {
+			queryClasses[i] = strings.ToLower(queryClasses[i])
+		}
+
+		if err := database.GetDB().Model(&races).Distinct().Preload("RecommendedClasses").Joins("INNER JOIN race_recommended_classes rc ON (rc.race_id = id)").Joins("INNER JOIN classes c ON (rc.class_id = c.id)").Where("LOWER(c.name) IN (?)", queryClasses).Find(&races).Error; err != nil {
 			log.Println("Error while executing getRacesByRecommendedClasses: ", err)
 			c.JSON(http.StatusNotFound, fmt.Sprintf("{classes: %s, message: \"Resource not found.\"}", queryClasses))
 			return
@@ -124,8 +129,8 @@ func getClassesByProficiencies(c *gin.Context) {
 	proficiencies, queryParamNotEmpty := c.Request.URL.Query()["proficiencies"]
 
 	if queryParamNotEmpty {
-		rawQuery := "SELECT * from classes c INNER JOIN class_proficiencies cp ON (cp.class_id = c.id) INNER JOIN proficiencies p ON (cp.proficiency_id = p.id) WHERE p.name IN ?"
-		if err := database.GetDB().Raw(rawQuery, proficiencies).Scan(&classes).Error; err != nil {
+		// rawQuery := "SELECT * from classes c INNER JOIN class_proficiencies cp ON (cp.class_id = c.id) INNER JOIN proficiencies p ON (cp.proficiency_id = p.id) WHERE p.name IN ?"
+		if err := database.GetDB().Model(&classes).Distinct().Joins("INNER JOIN class_proficiencies cp ON (cp.class_id = id)").Joins("INNER JOIN proficiencies p ON (cp.proficiency_id = p.id)").Where("p.name IN ?", proficiencies).Find(&classes).Error; err != nil {
 			log.Println("Error while executing getClassesByProficiencies: ", err)
 			c.JSON(http.StatusNotFound, fmt.Sprintf("{proficiencies: %s, message: \"Resource not found.\"}", proficiencies))
 			return
