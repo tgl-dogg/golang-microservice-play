@@ -61,11 +61,12 @@ func setupDatabase() {
 func setupRoutes(router *gin.Engine) {
 	repository := database.NewRepository(database.GetDB())
 
-	router.GET("/races", getRaces)
-	router.GET("/races/:id", getRaceByID)
-	router.GET("/races/by-recommended-classes", getRacesByRecommendedClasses)
+	race := controllers.NewRaceHandler(repository)
+	router.GET("/races", race.GetAll)
+	router.GET("/races/:id", race.GetByID)
+	router.GET("/races/by-recommended-classes", race.GetByRecommendedClasses)
 
-	class := controllers.NewClassController(repository)
+	class := controllers.NewClassHandler(repository)
 	router.GET("/classes", class.GetAll)
 	router.GET("/classes/:id", class.GetByID)
 	router.GET("/classes/by-role/:role", class.GetByRole)
@@ -75,79 +76,6 @@ func setupRoutes(router *gin.Engine) {
 	router.GET("/skills/:id", getSkillByID)
 	router.GET("/skills/by-type/:type", getSkillsByType)
 	router.GET("/skills/by-source/:source", getSkillsBySource)
-}
-
-func getRaces(c *gin.Context) {
-	var races []heroes.Race
-	if findAll(c, &races) {
-		c.IndentedJSON(http.StatusOK, races)
-	}
-}
-
-func getRaceByID(c *gin.Context) {
-	var race heroes.Race
-	if findById(c, &race) {
-		c.IndentedJSON(http.StatusOK, race)
-	}
-}
-
-func getRacesByRecommendedClasses(c *gin.Context) {
-	var races []heroes.Race
-	queryClasses, queryParamNotEmpty := c.Request.URL.Query()["classes"]
-
-	if queryParamNotEmpty {
-		// Lowercasing params because SQL's IN clause is not case insensitive.
-		for i := range queryClasses {
-			queryClasses[i] = strings.ToLower(queryClasses[i])
-		}
-
-		if err := database.GetDB().Model(&races).Distinct().Preload("RecommendedClasses").Joins("INNER JOIN race_recommended_classes rc ON (rc.race_id = id)").Joins("INNER JOIN classes c ON (rc.class_id = c.id)").Where("LOWER(c.name) IN (?)", queryClasses).Find(&races).Error; err != nil {
-			log.Println("Error while executing getRacesByRecommendedClasses: ", err)
-			c.JSON(http.StatusNotFound, fmt.Sprintf("{classes: %s, message: \"Resource not found.\"}", queryClasses))
-			return
-		}
-	}
-
-	c.IndentedJSON(http.StatusOK, races)
-}
-
-func getClasses(c *gin.Context) {
-	var classes []heroes.Class
-	if findAll(c, &classes) {
-		c.IndentedJSON(http.StatusOK, classes)
-	}
-}
-
-func getClassByID(c *gin.Context) {
-	var class heroes.Class
-	if findById(c, &class) {
-		c.IndentedJSON(http.StatusOK, class)
-	}
-}
-
-func getClassesByRole(c *gin.Context) {
-	var classes []heroes.Class
-	role := heroes.Role(strings.ToLower(c.Param("role")))
-
-	if findByField(c, &classes, &heroes.Class{Role: role}, "role", string(role)) {
-		c.IndentedJSON(http.StatusOK, classes)
-	}
-}
-
-func getClassesByProficiencies(c *gin.Context) {
-	var classes []heroes.Class
-	proficiencies, queryParamNotEmpty := c.Request.URL.Query()["proficiencies"]
-
-	if queryParamNotEmpty {
-		// rawQuery := "SELECT * from classes c INNER JOIN class_proficiencies cp ON (cp.class_id = c.id) INNER JOIN proficiencies p ON (cp.proficiency_id = p.id) WHERE p.name IN ?"
-		if err := database.GetDB().Model(&classes).Distinct().Joins("INNER JOIN class_proficiencies cp ON (cp.class_id = id)").Joins("INNER JOIN proficiencies p ON (cp.proficiency_id = p.id)").Where("p.name IN ?", proficiencies).Find(&classes).Error; err != nil {
-			log.Println("Error while executing getClassesByProficiencies: ", err)
-			c.JSON(http.StatusNotFound, fmt.Sprintf("{proficiencies: %s, message: \"Resource not found.\"}", proficiencies))
-			return
-		}
-	}
-
-	c.IndentedJSON(http.StatusOK, classes)
 }
 
 func getSkills(c *gin.Context) {

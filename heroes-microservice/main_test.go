@@ -145,7 +145,7 @@ func isRacePresent(races []hero.Race, name string) bool {
 func Test_GetClasses_OK(t *testing.T) {
 	db, mock, repository := setup()
 	defer db.Close()
-	ch := controllers.NewClassController(repository)
+	ch := controllers.NewClassHandler(repository)
 
 	rows := mock.NewRows([]string{"id", "name"}).AddRow(1, "Warrior").AddRow(2, "Thief").AddRow(3, "Wizard")
 	mock.ExpectQuery("SELECT (.+) FROM \"classes\"").WillReturnRows(rows)
@@ -167,7 +167,7 @@ func Test_GetClasses_OK(t *testing.T) {
 func Test_GetClasses_NOK(t *testing.T) {
 	db, mock, repository := setup()
 	defer db.Close()
-	ch := controllers.NewClassController(repository)
+	ch := controllers.NewClassHandler(repository)
 
 	mock.ExpectQuery("SELECT (.+) FROM \"classes\"").WillReturnError(mockError)
 
@@ -181,7 +181,7 @@ func Test_GetClasses_NOK(t *testing.T) {
 func Test_GetClassByID_OK(t *testing.T) {
 	db, mock, repository := setup()
 	defer db.Close()
-	ch := controllers.NewClassController(repository)
+	ch := controllers.NewClassHandler(repository)
 
 	rows := mock.NewRows([]string{"id", "name"}).AddRow(1, "Warrior")
 	mock.ExpectQuery("SELECT (.+) FROM \"classes\" WHERE \"classes\".\"id\" = ? (.+)").WithArgs(1).WillReturnRows(rows)
@@ -207,7 +207,7 @@ func Test_GetClassByID_OK(t *testing.T) {
 func Test_GetClassByID_INVALID(t *testing.T) {
 	db, mock, repository := setup()
 	defer db.Close()
-	ch := controllers.NewClassController(repository)
+	ch := controllers.NewClassHandler(repository)
 
 	invalidID := "98a11010-d019-11ec-9d64-0242ac120002"
 	r := gin.New()
@@ -225,7 +225,7 @@ func Test_GetClassByID_INVALID(t *testing.T) {
 func Test_GetClassByID_NOTFOUND(t *testing.T) {
 	db, mock, repository := setup()
 	defer db.Close()
-	ch := controllers.NewClassController(repository)
+	ch := controllers.NewClassHandler(repository)
 
 	mock.ExpectQuery("SELECT (.+) FROM \"classes\" (.+)").WillReturnRows(emptyRows)
 
@@ -239,7 +239,7 @@ func Test_GetClassByID_NOTFOUND(t *testing.T) {
 func Test_GetClassByRole_OK(t *testing.T) {
 	db, mock, repository := setup()
 	defer db.Close()
-	ch := controllers.NewClassController(repository)
+	ch := controllers.NewClassHandler(repository)
 
 	rows := mock.NewRows([]string{"id", "name", "role"}).AddRow(1, "Warrior", "fighter")
 	mock.ExpectQuery("SELECT (.+) FROM \"classes\" WHERE \"classes\".\"role\" = ? (.+)").WithArgs("fighter").WillReturnRows(rows)
@@ -261,7 +261,7 @@ func Test_GetClassByRole_OK(t *testing.T) {
 func Test_GetClassByRole_NOK(t *testing.T) {
 	db, mock, repository := setup()
 	defer db.Close()
-	ch := controllers.NewClassController(repository)
+	ch := controllers.NewClassHandler(repository)
 
 	mock.ExpectQuery("SELECT (.+) FROM \"classes\" (.+)").WillReturnError(mockError)
 
@@ -275,7 +275,7 @@ func Test_GetClassByRole_NOK(t *testing.T) {
 func Test_GetClassByProficiencies_OK(t *testing.T) {
 	db, mock, repository := setup()
 	defer db.Close()
-	ch := controllers.NewClassController(repository)
+	ch := controllers.NewClassHandler(repository)
 
 	rows := mock.NewRows([]string{"id", "name"}).AddRow(1, "Warrior").AddRow(3, "Wizard")
 	mock.ExpectQuery("SELECT (.+) FROM \"classes\"").WillReturnRows(rows)
@@ -297,7 +297,7 @@ func Test_GetClassByProficiencies_OK(t *testing.T) {
 func Test_GetClassByProficiencies_NOK(t *testing.T) {
 	db, mock, repository := setup()
 	defer db.Close()
-	ch := controllers.NewClassController(repository)
+	ch := controllers.NewClassHandler(repository)
 
 	mock.ExpectQuery("SELECT (.+) FROM \"classes\"").WillReturnError(mockError)
 

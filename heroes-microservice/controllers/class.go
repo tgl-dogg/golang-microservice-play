@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -12,51 +11,28 @@ import (
 	"github.com/tgl-dogg/golang-microservice-play/heroes-microservice/database"
 )
 
-type ClassController struct {
+type ClassHandler struct {
 	repository database.Repository
 }
 
-func NewClassController(r database.Repository) ClassController {
-	return ClassController{r}
+func NewClassHandler(r database.Repository) ClassHandler {
+	return ClassHandler{r}
 }
 
-func (h *ClassController) GetAll(c *gin.Context) {
-	var classes []heroes.Class
-	if h.repository.FindAll(&classes) {
-		c.IndentedJSON(http.StatusOK, classes)
-	} else {
-		c.JSON(http.StatusInternalServerError, "Unable to process your request right now. Please check with system administrator.")
-	}
+func (h *ClassHandler) GetAll(c *gin.Context) {
+	getAll(c, h.repository, &[]heroes.Class{})
 }
 
-func (h *ClassController) GetByID(c *gin.Context) {
-	var class heroes.Class
-
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, "IDs should be numerical values. Invalid ID received: "+c.Param("id"))
-		return
-	}
-
-	if h.repository.FindById(&class, id) {
-		c.IndentedJSON(http.StatusOK, class)
-	} else {
-		c.JSON(http.StatusNotFound, fmt.Sprintf("{id: %d, message: \"Resource not found.\"}", id))
-	}
+func (h *ClassHandler) GetByID(c *gin.Context) {
+	getByID(c, h.repository, &heroes.Class{})
 }
 
-func (h *ClassController) GetByRole(c *gin.Context) {
-	var classes []heroes.Class
+func (h *ClassHandler) GetByRole(c *gin.Context) {
 	role := heroes.Role(strings.ToLower(c.Param("role")))
-
-	if h.repository.FindByField(&classes, &heroes.Class{Role: role}) {
-		c.IndentedJSON(http.StatusOK, classes)
-	} else {
-		c.JSON(http.StatusNotFound, fmt.Sprintf("{%s: %s, message: \"Resource not found.\"}", "role", role))
-	}
+	getByField(c, h.repository, &[]heroes.Class{}, &heroes.Class{Role: role})
 }
 
-func (h *ClassController) GetByProficiencies(c *gin.Context) {
+func (h *ClassHandler) GetByProficiencies(c *gin.Context) {
 	var classes []heroes.Class
 	proficiencies, queryParamNotEmpty := c.Request.URL.Query()["proficiencies"]
 
