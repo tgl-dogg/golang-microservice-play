@@ -8,8 +8,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// DB is a connected database object
-var DB *gorm.DB
+// database is a connected database object
+var database *gorm.DB
+
+// GetDB implements Singleton pattern to keep a single connection for all queries.
+func GetDB() *gorm.DB {
+	return database
+}
 
 // Setup database connection based on parameters provided in the receiver.
 func (dbConnection DBConnection) Setup() {
@@ -21,12 +26,7 @@ func (dbConnection DBConnection) Setup() {
 
 	// db.LogMode(false)
 	// db.AutoMigrate([]heroes.Race{})
-	DB = db
-}
-
-// GetDB implements Singleton pattern to keep a single connection for all queries.
-func GetDB() *gorm.DB {
-	return DB
+	database = db
 }
 
 // DBConnection wraps information necessary to connect to a database.
