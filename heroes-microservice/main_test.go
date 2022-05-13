@@ -224,9 +224,9 @@ func Test_GetClassByID_OK(t *testing.T) {
 	rows := mock.NewRows([]string{"id", "name"}).AddRow(1, "Warrior")
 	mock.ExpectQuery("SELECT (.+) FROM \"classes\" WHERE \"classes\".\"id\" = ? (.+)").WithArgs(1).WillReturnRows(rows)
 
-	mock.ExpectQuery("SELECT (.+) FROM \"class_available_skills\" (.+)").WillReturnRows(mock.NewRows([]string{"id"}))
-	mock.ExpectQuery("SELECT (.+) FROM \"class_proficiencies\" (.+)").WillReturnRows(mock.NewRows([]string{"id"}))
-	mock.ExpectQuery("SELECT (.+) FROM \"class_starting_skills\" (.+)").WillReturnRows(mock.NewRows([]string{"id"}))
+	mock.ExpectQuery("SELECT (.+) FROM \"class_available_skills\" (.+)").WillReturnRows(emptyRows)
+	mock.ExpectQuery("SELECT (.+) FROM \"class_proficiencies\" (.+)").WillReturnRows(emptyRows)
+	mock.ExpectQuery("SELECT (.+) FROM \"class_starting_skills\" (.+)").WillReturnRows(emptyRows)
 
 	r := gin.New()
 	r.GET("/:id", ch.GetByID)
@@ -342,6 +342,170 @@ func Test_GetClassByProficiencies_NOK(t *testing.T) {
 	r := gin.New()
 	r.GET("/mock", ch.GetByProficiencies)
 	emulateRequest(r, "/mock?proficiencies=foresight", http.StatusInternalServerError)
+
+	shutdown(mock)
+}
+
+func Test_GetSkills_OK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	h := controllers.NewSkillHandler(repository)
+
+	rows := mock.NewRows([]string{"id", "name"}).AddRow(1, "Mountain Vigor").AddRow(2, "War Cry").AddRow(3, "Hellfire")
+	mock.ExpectQuery("SELECT (.+) FROM \"skills\"").WillReturnRows(rows)
+
+	r := gin.New()
+	r.GET("/", h.GetAll)
+	resp := emulateRequest(r, "/", http.StatusOK)
+
+	var skills []heroes.Skill
+	decodeJSON(resp.Body, &skills)
+
+	if len(skills) != 3 {
+		t.Error("Invalid records found:", skills)
+	}
+
+	shutdown(mock)
+}
+
+func Test_GetSkills_NOK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	h := controllers.NewSkillHandler(repository)
+
+	mock.ExpectQuery("SELECT (.+) FROM \"skills\"").WillReturnError(errMock)
+
+	r := gin.New()
+	r.GET("/", h.GetAll)
+	emulateRequest(r, "/", http.StatusInternalServerError)
+
+	shutdown(mock)
+}
+
+func Test_GetSkillByID_OK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	h := controllers.NewSkillHandler(repository)
+
+	rows := mock.NewRows([]string{"id", "name"}).AddRow(2, "War Cry")
+	mock.ExpectQuery("SELECT (.+) FROM \"skills\" WHERE \"skills\".\"id\" = ? (.+)").WithArgs(2).WillReturnRows(rows)
+
+	mock.ExpectQuery("SELECT (.+) FROM \"skill_requirements\" (.+)").WillReturnRows(emptyRows)
+
+	r := gin.New()
+	r.GET("/:id", h.GetByID)
+	resp := emulateRequest(r, "/2", http.StatusOK)
+
+	var skill heroes.Skill
+	decodeJSON(resp.Body, &skill)
+
+	if skill.Name != "War Cry" {
+		t.Error("Invalid record found:", skill)
+	}
+
+	shutdown(mock)
+}
+
+func Test_GetSkillByID_INVALID(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	h := controllers.NewSkillHandler(repository)
+
+	invalidID := "98a11010-d019-11ec-9d64-0242ac120002"
+	r := gin.New()
+	r.GET("/:id", h.GetByID)
+	resp := emulateRequest(r, "/"+invalidID, http.StatusBadRequest)
+
+	body := resp.Body.String()
+	if !strings.Contains(body, invalidID) {
+		t.Error("Invalid response error:", body)
+	}
+
+	shutdown(mock)
+}
+
+func Test_GetSkillByID_NOTFOUND(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	h := controllers.NewSkillHandler(repository)
+
+	mock.ExpectQuery("SELECT (.+) FROM \"skills\" (.+)").WillReturnRows(emptyRows)
+
+	r := gin.New()
+	r.GET("/:id", h.GetByID)
+	emulateRequest(r, "/1", http.StatusNotFound)
+
+	shutdown(mock)
+}
+
+func Test_GetSkillByType_OK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	h := controllers.NewSkillHandler(repository)
+
+	rows := mock.NewRows([]string{"id", "name", "type"}).AddRow(3, "Hellfire", "spell").AddRow(4, "Hellfire II", "spell")
+	mock.ExpectQuery("SELECT (.+) FROM \"skills\" WHERE \"skills\".\"type\" = ? (.+)").WithArgs("spell").WillReturnRows(rows)
+
+	r := gin.New()
+	r.GET("/:type", h.GetByType)
+	resp := emulateRequest(r, "/spell", http.StatusOK)
+
+	var skills []heroes.Skill
+	decodeJSON(resp.Body, &skills)
+
+	if skills[0].Type != "spell" {
+		t.Error("Invalid record found:", skills[0])
+	}
+
+	shutdown(mock)
+}
+
+func Test_GetSkillByType_NOK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	h := controllers.NewSkillHandler(repository)
+
+	mock.ExpectQuery("SELECT (.+) FROM \"skills\"").WillReturnError(errMock)
+
+	r := gin.New()
+	r.GET("/:type", h.GetByType)
+	emulateRequest(r, "/firula", http.StatusInternalServerError)
+
+	shutdown(mock)
+}
+
+func Test_GetSkillBySource_OK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	h := controllers.NewSkillHandler(repository)
+
+	rows := mock.NewRows([]string{"id", "name", "source"}).AddRow(1, "Mountain Vigor", "race")
+	mock.ExpectQuery("SELECT (.+) FROM \"skills\" WHERE \"skills\".\"source\" = ? (.+)").WithArgs("race").WillReturnRows(rows)
+
+	r := gin.New()
+	r.GET("/:source", h.GetBySource)
+	resp := emulateRequest(r, "/race", http.StatusOK)
+
+	var skills []heroes.Skill
+	decodeJSON(resp.Body, &skills)
+
+	if skills[0].Source != "race" {
+		t.Error("Invalid record found:", skills[0])
+	}
+
+	shutdown(mock)
+}
+
+func Test_GetSkillBySource_NOK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+	h := controllers.NewSkillHandler(repository)
+
+	mock.ExpectQuery("SELECT (.+) FROM \"skills\"").WillReturnError(errMock)
+
+	r := gin.New()
+	r.GET("/:source", h.GetBySource)
+	emulateRequest(r, "/familiar", http.StatusInternalServerError)
 
 	shutdown(mock)
 }
