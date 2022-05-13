@@ -12,22 +12,24 @@ import (
 )
 
 func main() {
-	loadEnvFiles()
-	setupDatabase()
+	loadEnvFiles("local.env")
+
+	repository := setupDatabase()
+	runMigrations(repository)
 
 	router := gin.Default()
-	setupRoutes(router)
+	setupRoutes(router, repository)
 	router.Run("localhost:8080")
 }
 
-func loadEnvFiles() {
-	err := godotenv.Load("local.env")
+func loadEnvFiles(file string) {
+	err := godotenv.Load(file)
 	if err != nil {
-		log.Fatalf("Some error occured while loading .env file. Err: %s", err)
+		log.Panicf("Some error occurred while loading .env file. Err: %s", err)
 	}
 }
 
-func setupDatabase() {
+func setupDatabase() database.Repository {
 	dbConnection := database.DBConnection{
 		Host:     os.Getenv("DATABASE_HOST"),
 		Port:     os.Getenv("DATABASE_PORT"),
@@ -37,16 +39,18 @@ func setupDatabase() {
 	}
 	dbConnection.Setup()
 
+	return database.NewRepository(database.GetDB())
+}
+
+func runMigrations(repository database.Repository) {
 	if os.Getenv("RUN_MIGRATIONS") == "true" {
-		database.GetDB().AutoMigrate([]heroes.Skill{})
-		database.GetDB().AutoMigrate([]heroes.Class{})
-		database.GetDB().AutoMigrate([]heroes.Race{})
+		repository.GetDB().AutoMigrate([]heroes.Skill{})
+		repository.GetDB().AutoMigrate([]heroes.Class{})
+		repository.GetDB().AutoMigrate([]heroes.Race{})
 	}
 }
 
-func setupRoutes(router *gin.Engine) {
-	repository := database.NewRepository(database.GetDB())
-
+func setupRoutes(router *gin.Engine, repository database.Repository) {
 	race := controllers.NewRaceHandler(repository)
 	router.GET("/races", race.GetAll)
 	router.GET("/races/:id", race.GetByID)

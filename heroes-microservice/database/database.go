@@ -21,11 +21,10 @@ func (dbConnection DBConnection) Setup() {
 	dbInfo := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", dbConnection.Host, dbConnection.Port, dbConnection.User, dbConnection.DBName, dbConnection.Password)
 	db, err := gorm.Open(postgres.Open(dbInfo), &gorm.Config{})
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	// db.LogMode(false)
-	// db.AutoMigrate([]heroes.Race{})
 	database = db
 }
 
