@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -46,6 +47,107 @@ func shutdown(mock sqlmock.Sqlmock) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		panic(fmt.Sprintf("There were unfulfilled expectations: %s", err))
 	}
+}
+
+func Test_LoadEnvFile_OK(t *testing.T) {
+	loadEnvFiles("../test.env")
+
+	if os.Getenv("TEST_SUCCESSFUL") != "true" {
+		t.Error("Expected env variables to be available.")
+	}
+}
+
+func Test_LoadEnvFile_NOK(t *testing.T) {
+	// This code should panic because it won't find any .env files to load.
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic.")
+		}
+	}()
+
+	loadEnvFiles("nobody.env")
+}
+
+func Test_SetupDatabase_NOK(t *testing.T) {
+	// This code should panic because database connection string will be empty.
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic.")
+		}
+	}()
+
+	setupDatabase()
+}
+
+func Test_RunMigrations_OK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+
+	countZero := sqlmock.NewRows([]string{"count"}).AddRow(0)
+	successfulExec := sqlmock.NewResult(0, 0)
+	mock.ExpectQuery("SELECT count(.+)").WillReturnRows(countZero)
+	mock.ExpectExec("CREATE TABLE \"skills\" (.+)").WillReturnResult(successfulExec)
+	mock.ExpectExec("CREATE TABLE \"skill_requirements\" (.+)").WillReturnResult(successfulExec)
+
+	mock.ExpectQuery("SELECT count(.+)").WillReturnRows(countZero)
+	mock.ExpectExec("CREATE TABLE \"classes\" (.+)").WillReturnResult(successfulExec)
+
+	mock.ExpectQuery("SELECT count(.+)").WillReturnRows(countZero)
+	mock.ExpectExec("CREATE TABLE \"races\" (.+)").WillReturnResult(successfulExec)
+
+	os.Setenv("RUN_MIGRATIONS", "true")
+	runMigrations(repository)
+
+	shutdown(mock)
+}
+
+func Test_RunMigrations_SKIPPED(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+
+	os.Setenv("RUN_MIGRATIONS", "false")
+	runMigrations(repository)
+
+	shutdown(mock)
+
+}
+
+func Test_RoutesRegisted_OK(t *testing.T) {
+	db, mock, repository := setup()
+	defer db.Close()
+
+	r := gin.New()
+	setupRoutes(r, repository)
+
+	routesMap := map[string]bool{
+		"/races":                        false,
+		"/races/:id":                    false,
+		"/races/by-recommended-classes": false,
+		"/classes":                      false,
+		"/classes/:id":                  false,
+		"/classes/by-role/:role":        false,
+		"/classes/by-proficiencies":     false,
+		"/skills":                       false,
+		"/skills/:id":                   false,
+		"/skills/by-type/:type":         false,
+		"/skills/by-source/:source":     false,
+	}
+
+	for _, v := range r.Routes() {
+		if _, ok := routesMap[v.Path]; ok {
+			routesMap[v.Path] = true
+		} else {
+			t.Errorf("Unexpected route registered: %s", v.Path)
+		}
+	}
+
+	for k, v := range routesMap {
+		if !v {
+			t.Errorf("Route expected but not registered: %s", k)
+		}
+	}
+
+	shutdown(mock)
 }
 
 func Test_GetRaces_OK(t *testing.T) {
