@@ -2,8 +2,8 @@ name: CI
 
 on:
   push:
-    #branches: [ main ]
-    branches: [ main, database-implementation ]
+    branches: [ main ]
+    #branches: [ main, ui-implementation ]
 
 jobs:
   build:
