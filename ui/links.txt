@@ -1,0 +1,15 @@
+https://www.sanity.io/guides/make-a-pwa-with-react
+
+https://codesource.io/build-progressive-web-application-pwa-with-react/
+
+https://create-react-app.dev/docs/making-a-progressive-web-app/
+
+https://coreui.io/react/#compare
+
+
+
+
+
+https://riptutorial.com/go/example/15183/testing-using-setup-and-teardown-function
+
+https://stackoverflow.com/questions/23729790/how-can-i-do-test-setup-using-the-testing-package-in-go
