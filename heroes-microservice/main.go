@@ -18,6 +18,7 @@ func main() {
 	runMigrations(repository)
 
 	router := gin.Default()
+	router.Use(CORSMiddleware())
 	setupRoutes(router, repository)
 	router.Run("localhost:8080")
 }
@@ -67,4 +68,20 @@ func setupRoutes(router *gin.Engine, repository database.Repository) {
 	router.GET("/skills/:id", skill.GetByID)
 	router.GET("/skills/by-type/:type", skill.GetByType)
 	router.GET("/skills/by-source/:source", skill.GetBySource)
+}
+
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Header("Access-Control-Allow-Methods", "POST,HEAD,PATCH, OPTIONS, GET, PUT")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	}
 }
